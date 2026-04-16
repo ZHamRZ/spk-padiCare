@@ -1,0 +1,126 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+
+        Schema::create('gejala', function (Blueprint $table) {
+            $table->id();
+            $table->string('kode', 10)->unique();
+            $table->string('nama_gejala', 200);
+            $table->timestamps();
+        });
+
+
+        Schema::create('penyakit_gejala', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('id_penyakit')->constrained('penyakit')->cascadeOnDelete();
+            $table->foreignId('id_gejala')->constrained('gejala')->cascadeOnDelete();
+            $table->unique(['id_penyakit', 'id_gejala']);
+        });
+
+
+        Schema::create('kriteria', function (Blueprint $table) {
+            $table->id();
+            $table->string('kode', 10)->unique();
+            $table->string('nama', 100);
+            $table->enum('jenis', ['benefit', 'cost']);
+            $table->decimal('bobot', 5, 2);
+            $table->text('keterangan')->nullable();
+            $table->timestamps();
+        });
+
+
+        Schema::create('pupuk', function (Blueprint $table) {
+            $table->id();
+            $table->string('kode', 10)->unique();
+            $table->string('nama', 100);
+            $table->string('kandungan', 200)->nullable();
+            $table->text('fungsi_utama')->nullable();
+            $table->decimal('harga_per_kg', 10, 2);
+            $table->string('satuan', 20)->default('kg');
+            $table->timestamps();
+        });
+
+
+        Schema::create('pestisida', function (Blueprint $table) {
+            $table->id();
+            $table->string('kode', 10)->unique();
+            $table->string('nama', 100);
+            $table->enum('jenis', ['fungisida', 'bakterisida', 'insektisida', 'herbisida']);
+            $table->string('bahan_aktif', 200)->nullable();
+            $table->string('dosis', 100)->nullable();
+            $table->decimal('harga', 10, 2);
+            $table->string('satuan_harga', 30)->default('per 100ml');
+            $table->timestamps();
+        });
+
+
+        Schema::create('rating_pupuk', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('id_pupuk')->constrained('pupuk')->cascadeOnDelete();
+            $table->foreignId('id_kriteria')->constrained('kriteria')->cascadeOnDelete();
+            $table->foreignId('id_penyakit')->constrained('penyakit')->cascadeOnDelete();
+            $table->decimal('nilai', 5, 2);
+            $table->timestamps();
+            $table->unique(['id_pupuk', 'id_kriteria', 'id_penyakit']);
+        });
+
+
+        Schema::create('rating_pestisida', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('id_pestisida')->constrained('pestisida')->cascadeOnDelete();
+            $table->foreignId('id_kriteria')->constrained('kriteria')->cascadeOnDelete();
+            $table->foreignId('id_penyakit')->constrained('penyakit')->cascadeOnDelete();
+            $table->decimal('nilai', 5, 2);
+            $table->timestamps();
+            $table->unique(['id_pestisida', 'id_kriteria', 'id_penyakit']);
+        });
+
+
+        Schema::create('rekomendasi', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('id_user')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('id_penyakit')->constrained('penyakit')->cascadeOnDelete();
+            $table->timestamp('tanggal')->useCurrent();
+            $table->timestamps();
+        });
+
+
+        Schema::create('detail_rekomendasi_pupuk', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('id_rekomendasi')->constrained('rekomendasi')->cascadeOnDelete();
+            $table->foreignId('id_pupuk')->constrained('pupuk')->cascadeOnDelete();
+            $table->decimal('nilai_vi', 8, 6);
+            $table->integer('peringkat');
+        });
+
+    
+        Schema::create('detail_rekomendasi_pestisida', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('id_rekomendasi')->constrained('rekomendasi')->cascadeOnDelete();
+            $table->foreignId('id_pestisida')->constrained('pestisida')->cascadeOnDelete();
+            $table->decimal('nilai_vi', 8, 6);
+            $table->integer('peringkat');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('detail_rekomendasi_pestisida');
+        Schema::dropIfExists('detail_rekomendasi_pupuk');
+        Schema::dropIfExists('rekomendasi');
+        Schema::dropIfExists('rating_pestisida');
+        Schema::dropIfExists('rating_pupuk');
+        Schema::dropIfExists('pestisida');
+        Schema::dropIfExists('pupuk');
+        Schema::dropIfExists('kriteria');
+        Schema::dropIfExists('penyakit_gejala');
+        Schema::dropIfExists('gejala');
+    }
+};

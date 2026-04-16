@@ -1,0 +1,43 @@
+@extends('layouts.app')
+
+@section('title', 'Riwayat Rekomendasi')
+@section('page-title', 'Riwayat Rekomendasi')
+
+@section('content')
+<div class="card">
+    <div class="card-header">Riwayat Semua Pengguna</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Pengguna</th>
+                        <th>Penyakit</th>
+                        <th>Top Pupuk</th>
+                        <th>Top Pestisida</th>
+                        <th class="text-end">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($riwayat as $item)
+                    <tr>
+                        <td>{{ optional($item->created_at)->format('d M Y H:i') }}</td>
+                        <td>{{ $item->user->nama ?? '-' }}</td>
+                        <td>{{ $item->penyakit->nama ?? '-' }}</td>
+                        <td>{{ optional($item->detailPupuk->sortBy('peringkat')->first())->peringkat ? optional(optional($item->detailPupuk->sortBy('peringkat')->first())->pupuk)->nama : '-' }}</td>
+                        <td>{{ optional($item->detailPestisida->sortBy('peringkat')->first())->peringkat ? optional(optional($item->detailPestisida->sortBy('peringkat')->first())->pestisida)->nama : '-' }}</td>
+                        <td class="text-end"><a href="{{ route('admin.riwayat.show', $item->id) }}" class="btn btn-sm btn-outline-success">Detail</a></td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="6" class="text-center py-4 text-muted">Belum ada riwayat rekomendasi.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @if($riwayat->hasPages())
+    <div class="card-footer">{{ $riwayat->links() }}</div>
+    @endif
+</div>
+@endsection
