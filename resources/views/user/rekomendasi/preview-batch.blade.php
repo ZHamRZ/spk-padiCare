@@ -137,6 +137,7 @@
         display: flex;
         flex-direction: column;
         height: 100%;
+        margin-bottom: 0;
     }
     .product-card:hover {
         box-shadow: 0 8px 28px rgba(15,23,42,.08);
@@ -144,13 +145,13 @@
     }
     .product-card-img {
         width: 100%;
-        height: 130px;
+        height: 140px;
         object-fit: cover;
         background: #f8fafc;
     }
     .product-card-img-empty {
         width: 100%;
-        height: 130px;
+        height: 140px;
         background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
         display: flex;
         align-items: center;
@@ -159,7 +160,7 @@
         font-size: 2rem;
     }
     .product-card-body {
-        padding: 14px;
+        padding: 16px;
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -416,15 +417,24 @@
     /* ── Product Grid Optimization ──────────────────── */
     .product-grid-wrapper {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+    .product-grid-wrapper.mb-4 {
+        margin-bottom: 0 !important;
+    }
+
+    /* ── Section Spacing ───────────────────────────── */
+    .section-label + .product-grid-wrapper {
+        margin-top: 16px;
     }
 
     /* ── Mobile Responsive ─────────────────────────── */
     @media (max-width: 991px) {
         .disease-meta-grid { grid-template-columns: repeat(3, 1fr); }
         .batch-card { border-radius: 16px; }
-        .product-grid-wrapper { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+        .product-grid-wrapper { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
         .detail-list { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
     }
     @media (max-width: 767px) {
@@ -437,7 +447,7 @@
         .detail-list { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
         .detail-row.full { grid-column: 1 / -1; }
         .detail-row.span2 { grid-column: 1 / -1; }
-        .product-grid-wrapper { grid-template-columns: 1fr; }
+        .product-grid-wrapper { grid-template-columns: 1fr; gap: 16px; }
         .action-bar .btn { flex: 1; min-width: 140px; text-align: center; }
         .section-label { font-size: .68rem; }
         .detail-toggle[open] .detail-panel { max-height: 450px; }
@@ -627,7 +637,7 @@
             <div class="section-label">
                 <i class="bi bi-bag-fill text-success"></i> Rekomendasi Pupuk
             </div>
-            <div class="product-grid-wrapper mb-4">
+            <div class="product-grid-wrapper">
                 @foreach($recommendedPupuk as $item)
                 <div class="product-card">
                         {{-- Image --}}
