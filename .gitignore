@@ -37,3 +37,7 @@ public/storage
 
 .DS_Store
 Thumbs.db
+
+# Database
+*.sql
+db_spk_padi.sql
