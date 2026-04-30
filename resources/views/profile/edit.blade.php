@@ -139,6 +139,7 @@
                     <div>
                         <div class="small text-muted">Email</div>
                         <div class="fw-semibold">{{ $user->email ?: 'Belum diisi' }}</div>
+                        @if($user->email)
                         <div class="small mt-1">
                             @if($user->hasVerifiedEmail())
                             <span class="badge text-bg-success">Terverifikasi</span>
@@ -152,6 +153,7 @@
                             <button type="submit" class="btn btn-sm btn-outline-success">Kirim Email Verifikasi</button>
                         </form>
                         @endunless
+                        @endif
                     </div>
                     <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#edit-email">Edit</button>
                 </div>
@@ -192,7 +194,7 @@
                             <input type="hidden" name="alamat" value="{{ old('alamat', $user->alamat) }}">
                             <input type="hidden" name="catatan_profil" value="{{ old('catatan_profil', $user->catatan_profil) }}">
                             <div class="col-md-8">
-                                <input type="text" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}" class="form-control @error('no_telp') is-invalid @enderror">
+                                <input type="text" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}" class="form-control @error('no_telp') is-invalid @enderror" placeholder="Contoh: 081234567890">
                                 @error('no_telp')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-4"><button type="submit" class="btn btn-spk w-100">Simpan</button></div>

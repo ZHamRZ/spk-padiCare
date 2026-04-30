@@ -113,12 +113,12 @@
                             <table class="table table-sm table-striped align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Rule</th>
-                                        <th>Jenis</th>
-                                        <th>Preferensi User</th>
-                                        <th>MB Tambahan</th>
-                                        <th>MD Tambahan</th>
-                                        <th>Dampak</th>
+                                        <th style="min-width: 180px;">Rule</th>
+                                        <th style="min-width: 100px;">Jenis</th>
+                                        <th style="min-width: 120px;">Preferensi User</th>
+                                        <th style="min-width: 120px;">MB Tambahan</th>
+                                        <th style="min-width: 120px;">MD Tambahan</th>
+                                        <th style="min-width: 120px;">Dampak</th>
                                         <th>Catatan</th>
                                     </tr>
                                 </thead>
@@ -127,14 +127,18 @@
                                     <tr>
                                         <td>
                                             <strong>{{ $kode }}</strong><br>
-                                            <span class="small text-muted">{{ $detail['kriteria'] }}</span>
+                                            <span class="small text-muted">{{ Str::limit($detail['kriteria'], 60) }}</span>
                                         </td>
                                         <td>{{ ucfirst($detail['jenis'] ?? '-') }}</td>
                                         <td>{{ is_null($detail['preferensi_user'] ?? null) ? '-' : ($detail['preferensi_user'] . '%') }}</td>
                                         <td>{{ number_format((float) ($detail['mb_bonus'] ?? 0), 4) }}</td>
                                         <td>{{ number_format((float) ($detail['md_bonus'] ?? 0), 4) }}</td>
-                                        <td>{{ number_format((float) ($detail['impact'] ?? 0), 4) }}</td>
-                                        <td class="small text-muted">{{ $detail['catatan'] ?? '-' }}</td>
+                                        <td>
+                                            <span class="{{ (($detail['impact'] ?? 0) >= 0) ? 'text-success' : 'text-danger' }}">
+                                                {{ number_format((float) ($detail['impact'] ?? 0), 4) }}
+                                            </span>
+                                        </td>
+                                        <td class="small text-muted">{{ Str::limit($detail['catatan'] ?? '-', 50) }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>

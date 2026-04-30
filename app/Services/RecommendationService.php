@@ -8,11 +8,34 @@ class RecommendationService
 {
     public function __construct(
         private SAWService $sawEngine,
-        private CertaintyFactorEngine $cfEngine
+        private CertaintyFactorEngine $cfEngine,
+        private FertilizerPesticideRecommendationEngine $fpEngine
     ) {}
-
+    
+    /**
+     * Preview rekomendasi dengan logika CF yang benar
+     */
     public function previewForDisease(int $diseaseId, array $preferences = []): array
     {
+        // Ekstrak gejala terpilih dari preferensi
+        $gejalaIds = collect($preferences['gejala_terpilih'] ?? [])
+            ->pluck('id')
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+        
+        // Jika ada gejala terpilih, gunakan FertilizerPesticideRecommendationEngine
+        // untuk mendapatkan rekomendasi dengan logika CF yang benar
+        if (!empty($gejalaIds)) {
+            return $this->fpEngine->calculateAllRecommendations(
+                $gejalaIds,
+                topN: null,
+                onlyPositive: true
+            );
+        }
+        
+        // Fallback ke metode lama jika tidak ada gejala
         return $this->sawEngine->preview($diseaseId, $preferences);
     }
 
@@ -28,7 +51,7 @@ class RecommendationService
 
     /**
      * Hitung rekomendasi dengan integrasi preferensi user yang mempengaruhi CF
-     * Preferensi dapat berupa preset (hemat, efisien, seimbang) atau custom criteria weights
+     * Menggunakan FertilizerPesticideRecommendationEngine untuk logika CF yang benar
      * 
      * @param int $diseaseId ID penyakit
      * @param string $presetType Tipe preset preferensi
@@ -41,7 +64,28 @@ class RecommendationService
         array $criteriaWeights = [],
         array $symptomWeights = []
     ): array {
-        // Dapatkan base CF dari diagnosis dengan symptom weights
+        // Ekstrak gejala terpilih dari symptom weights atau preferensi lain
+        $gejalaIds = array_keys($symptomWeights);
+        
+        // Jika ada gejala, gunakan FertilizerPesticideRecommendationEngine
+        if (!empty($gejalaIds)) {
+            // Hitung rekomendasi dasar dengan fpEngine (logika CF sudah benar)
+            $fpResult = $this->fpEngine->calculateAllRecommendations(
+                $gejalaIds,
+                topN: null,
+                onlyPositive: true
+            );
+            
+            // Apply preference adjustment jika diperlukan
+            // Catatan: adjustment ini bersifat opsional dan tidak mengubah logika dasar CF
+            if ($presetType !== 'seimbang' || !empty($criteriaWeights)) {
+                $fpResult = $this->applyPreferenceToFPResult($fpResult, $presetType, $criteriaWeights, $symptomWeights);
+            }
+            
+            return $fpResult;
+        }
+        
+        // Fallback ke metode lama jika tidak ada gejala
         $baseResult = $this->sawEngine->preview($diseaseId, [
             'preset' => $presetType,
             'kriteria' => $criteriaWeights,
@@ -176,6 +220,92 @@ class RecommendationService
             'seimbang' => 'Preferensi ini memberikan penyesuaian moderat untuk semua alternatif.',
             'custom' => 'Preferensi custom berdasarkan bobot kriteria yang Anda tentukan.',
             default => 'Preferensi standar dengan penyesuaian minimal.',
+        };
+    }
+    
+    /**
+     * Apply preference adjustment ke hasil dari FertilizerPesticideRecommendationEngine
+     * Tanpa mengubah logika dasar CF (transformasi sudah dilakukan oleh fpEngine)
+     */
+    private function applyPreferenceToFPResult(
+        array $fpResult,
+        string $presetType,
+        array $criteriaWeights,
+        array $symptomWeights
+    ): array {
+        // Untuk saat ini, kembalikan hasil fpEngine tanpa modifikasi
+        // karena transformasi CF sudah benar dilakukan oleh fpEngine
+        // Preference adjustment dapat ditambahkan di sini jika diperlukan
+        // dengan tetap menjaga integritas transformasi CF
+        
+        if (empty($criteriaWeights) && $presetType === 'seimbang') {
+            return $fpResult;
+        }
+        
+        // Apply minor adjustment untuk pupuk dan pestisida
+        $adjustedPupuk = collect($fpResult['pupuk'])->map(function ($item) use ($presetType, $criteriaWeights) {
+            $baseCf = $item['cf_rekomendasi'];
+            
+            // Adjustment kecil berdasarkan preset (tidak mengubah sign CF)
+            $adjustment = $this->getPresetAdjustmentValue($presetType, $item);
+            $adjustedCf = $this->cfEngine->normalizeToRange($baseCf + $adjustment, -1, 1);
+            
+            $item['cf_rekomendasi'] = round($adjustedCf, 4);
+            $item['cf_percentage'] = round($this->cfEngine->toPercentage($adjustedCf), 2);
+            $item['interpretation'] = $this->fpEngine->getRecommendationLabel($adjustedCf);
+            $item['preference_applied'] = true;
+            
+            return $item;
+        })->sortByDesc('cf_rekomendasi')->values();
+        
+        $adjustedPestisida = collect($fpResult['pestisida'])->map(function ($item) use ($presetType, $criteriaWeights) {
+            $baseCf = $item['cf_rekomendasi'];
+            
+            $adjustment = $this->getPresetAdjustmentValue($presetType, $item);
+            $adjustedCf = $this->cfEngine->normalizeToRange($baseCf + $adjustment, -1, 1);
+            
+            $item['cf_rekomendasi'] = round($adjustedCf, 4);
+            $item['cf_percentage'] = round($this->cfEngine->toPercentage($adjustedCf), 2);
+            $item['interpretation'] = $this->fpEngine->getRecommendationLabel($adjustedCf);
+            $item['preference_applied'] = true;
+            
+            return $item;
+        })->sortByDesc('cf_rekomendasi')->values();
+        
+        // Re-calculate peringkat setelah adjustment
+        foreach ($adjustedPupuk as $index => &$item) {
+            $item['peringkat'] = $index + 1;
+        }
+        foreach ($adjustedPestisida as $index => &$item) {
+            $item['peringkat'] = $index + 1;
+        }
+        
+        return [
+            'pupuk' => $adjustedPupuk->all(),
+            'pestisida' => $adjustedPestisida->all(),
+            'summary' => $fpResult['summary'],
+            'method_info' => $fpResult['method_info'],
+            'preference_info' => [
+                'preset' => $presetType,
+                'criteria_weights' => $criteriaWeights,
+                'symptom_weights' => $symptomWeights,
+                'description' => $this->getPreferenceDescription($presetType),
+                'applied' => true,
+            ],
+        ];
+    }
+    
+    /**
+     * Dapatkan nilai adjustment berdasarkan preset
+     * Nilai adjustment kecil untuk tidak mengubah sign CF
+     */
+    private function getPresetAdjustmentValue(string $presetType, array $item): float
+    {
+        return match ($presetType) {
+            'hemat' => data_get($item, 'meta.harga_per_kg', data_get($item, 'meta.harga', 0)) < 50000 ? 0.03 : -0.02,
+            'efisiensi' => data_get($item, 'cf_rekomendasi', 0) > 0.7 ? 0.02 : 0,
+            'seimbang' => 0,
+            default => 0,
         };
     }
 }

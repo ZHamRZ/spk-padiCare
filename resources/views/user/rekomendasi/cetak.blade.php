@@ -38,12 +38,34 @@
             border-radius: 12px;
             padding: 14px;
             background: #fff;
+            page-break-inside: avoid;
         }
         .detail-list p { margin-bottom: 6px; font-size: 14px; }
         .detail-list strong { display: inline-block; min-width: 120px; }
+        .item-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .item-title {
+            flex: 1;
+        }
         @media print {
             .toolbar { display: none !important; }
             body { margin: 0; }
+            .detail-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
     </style>
 </head>
@@ -81,9 +103,20 @@
         <div class="detail-grid">
             @foreach($rekomendasi->detailPupuk->sortBy('peringkat') as $item)
             <div class="detail-box">
-                <h4>{{ $item->pupuk->nama ?? '-' }}</h4>
+                <div class="item-header">
+                    @if(data_get($item, 'pupuk.gambar_url'))
+                    <img src="{{ data_get($item, 'pupuk.gambar_url') }}" alt="{{ $item->pupuk->nama ?? 'Pupuk' }}" class="item-image">
+                    @else
+                    <div class="item-image d-flex align-items-center justify-content-center bg-light text-muted">
+                        <i class="bi bi-flower1" style="font-size: 2rem;"></i>
+                    </div>
+                    @endif
+                    <div class="item-title">
+                        <h4 class="mb-1">{{ $item->pupuk->nama ?? '-' }}</h4>
+                        <small class="text-muted">{{ $item->pupuk->kode ?? '-' }}</small>
+                    </div>
+                </div>
                 <div class="detail-list">
-                    <p><strong>Kode</strong> {{ $item->pupuk->kode ?? '-' }}</p>
                     <p><strong>Peringkat</strong> {{ $item->peringkat }}</p>
                     <p><strong>Skor</strong> {{ number_format((float) $item->nilai_vi, 4) }}</p>
                     <p><strong>Kandungan</strong> {{ $item->pupuk->kandungan ?? '-' }}</p>
@@ -105,9 +138,20 @@
         <div class="detail-grid">
             @foreach($rekomendasi->detailPestisida->sortBy('peringkat') as $item)
             <div class="detail-box">
-                <h4>{{ $item->pestisida->nama ?? '-' }}</h4>
+                <div class="item-header">
+                    @if(data_get($item, 'pestisida.gambar_url'))
+                    <img src="{{ data_get($item, 'pestisida.gambar_url') }}" alt="{{ $item->pestisida->nama ?? 'Pestisida' }}" class="item-image">
+                    @else
+                    <div class="item-image d-flex align-items-center justify-content-center bg-light text-muted">
+                        <i class="bi bi-droplet" style="font-size: 2rem;"></i>
+                    </div>
+                    @endif
+                    <div class="item-title">
+                        <h4 class="mb-1">{{ $item->pestisida->nama ?? '-' }}</h4>
+                        <small class="text-muted">{{ $item->pestisida->kode ?? '-' }}</small>
+                    </div>
+                </div>
                 <div class="detail-list">
-                    <p><strong>Kode</strong> {{ $item->pestisida->kode ?? '-' }}</p>
                     <p><strong>Peringkat</strong> {{ $item->peringkat }}</p>
                     <p><strong>Skor</strong> {{ number_format((float) $item->nilai_vi, 4) }}</p>
                     <p><strong>Bahan aktif</strong> {{ $item->pestisida->bahan_aktif ?? '-' }}</p>
