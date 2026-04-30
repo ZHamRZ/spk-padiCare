@@ -94,6 +94,7 @@ Route::middleware(['auth', 'role:admin'])
         Route::resource('pestisida', PestisidaController::class)->except(['show']);
 
         Route::get('/kriteria', [KriteriaController::class, 'index'])->name('kriteria.index');
+        Route::post('/kriteria/update-bulk', [KriteriaController::class, 'updateBulk'])->name('kriteria.updateBulk');
         Route::get('/kriteria/{kriteria}/edit', [KriteriaController::class, 'edit'])->name('kriteria.edit');
         Route::put('/kriteria/{kriteria}', [KriteriaController::class, 'update'])->name('kriteria.update');
 
