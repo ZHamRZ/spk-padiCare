@@ -91,6 +91,18 @@ class RekomendasiController extends Controller
             ->where('id_user', Auth::id())
             ->findOrFail($id);
 
+        // Load gambar untuk pupuk dan pestisida
+        $rekomendasi->detailPupuk->each(function ($detail) {
+            if ($detail->pupuk) {
+                $detail->pupuk->makeVisible(['gambar']);
+            }
+        });
+        $rekomendasi->detailPestisida->each(function ($detail) {
+            if ($detail->pestisida) {
+                $detail->pestisida->makeVisible(['gambar']);
+            }
+        });
+
         if ($request->boolean('download')) {
             $html = view('user.rekomendasi.cetak', compact('rekomendasi'))->render();
 

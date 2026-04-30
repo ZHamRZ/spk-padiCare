@@ -17,8 +17,15 @@ use RuntimeException;
 class SAWService
 {
     public function __construct(
-        private CertaintyFactorEngine $cfEngine
+        private CertaintyFactorEngine $cfEngine,
+        private FertilizerPesticideRecommendationEngine $fpEngine
     ) {}
+    
+    /**
+     * Hitung rekomendasi dengan logika CF yang benar:
+     * - Pupuk: CF_rekomendasi = -CF_penyebab (transformasi negasi)
+     * - Pestisida: CF_rekomendasi = CF_solusi (tanpa transformasi)
+     */
     public function hitung(int $idUser, int $idPenyakit, array $preferensi = []): Rekomendasi
     {
         $preview = $this->preview($idPenyakit, $preferensi);
@@ -58,17 +65,97 @@ class SAWService
     public function preview(int $idPenyakit, array $preferensi = []): array
     {
         $kriteria = $this->buildPreferenceCriteria(Kriteria::orderBy('kode')->get(), $preferensi);
+        
+        // Ambil gejala terpilih dari preferensi
+        $gejalaIds = collect($preferensi['gejala_terpilih'] ?? [])
+            ->pluck('id')
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        // Jika ada gejala terpilih, gunakan FertilizerPesticideRecommendationEngine
+        // untuk menghitung rekomendasi dengan logika CF yang benar
+        if (!empty($gejalaIds)) {
+            $fpResult = $this->fpEngine->calculateAllRecommendations(
+                $gejalaIds,
+                topN: null,
+                onlyPositive: false // Tampilkan semua untuk preview lengkap
+            );
+            
+            // Format hasil agar kompatibel dengan struktur yang diharapkan
+            $pupukFormatted = $this->formatFpResultToLegacy($fpResult['pupuk'], 'pupuk');
+            $pestisidaFormatted = $this->formatFpResultToLegacy($fpResult['pestisida'], 'pestisida');
+        } else {
+            // Fallback ke metode lama jika tidak ada gejala
+            $pupukFormatted = $this->hitungAlternatif('pupuk', $idPenyakit, $kriteria, $preferensi);
+            $pestisidaFormatted = $this->hitungAlternatif('pestisida', $idPenyakit, $kriteria, $preferensi);
+        }
 
         return [
             'rumus' => [
                 'cf_rule' => 'CF = MB - MD',
                 'cf_combine' => 'CFcombine = CF1 + CF2 * (1 - CF1)',
+                'pupuk_transformation' => 'CF_rekomendasi = -CF_penyebab (negasi untuk pupuk)',
+                'pestisida_transformation' => 'CF_rekomendasi = CF_solusi (tanpa perubahan)',
                 'preferensi' => 'CF akhir = CF dasar + penyesuaian MB/MD berdasarkan preferensi pengguna',
             ],
             'kriteria' => $kriteria,
-            'pupuk' => $this->hitungAlternatif('pupuk', $idPenyakit, $kriteria, $preferensi),
-            'pestisida' => $this->hitungAlternatif('pestisida', $idPenyakit, $kriteria, $preferensi),
+            'pupuk' => $pupukFormatted,
+            'pestisida' => $pestisidaFormatted,
         ];
+    }
+    
+    /**
+     * Format hasil dari FertilizerPesticideRecommendationEngine ke format legacy
+     */
+    private function formatFpResultToLegacy(array $fpResults, string $type): array
+    {
+        return collect($fpResults)->map(function ($item) use ($type) {
+            $meta = [
+                'gambar_url' => data_get($item, 'gambar_url'),
+                'gejala_cocok' => data_get($item, 'symptom_details', []),
+            ];
+            
+            if ($type === 'pupuk') {
+                $meta = array_merge($meta, [
+                    'kandungan' => data_get($item, 'kandungan'),
+                    'kandungan_detail' => data_get($item, 'kandungan_detail'),
+                    'fungsi_utama' => data_get($item, 'fungsi_utama'),
+                    'takaran' => data_get($item, 'takaran'),
+                    'efek_penggunaan' => data_get($item, 'efek_penggunaan'),
+                    'cara_aplikasi' => data_get($item, 'cara_aplikasi'),
+                ]);
+            } else {
+                $meta = array_merge($meta, [
+                    'bahan_aktif' => data_get($item, 'bahan_aktif'),
+                    'fungsi' => data_get($item, 'fungsi'),
+                    'dosis' => data_get($item, 'dosis'),
+                    'efek_penggunaan' => data_get($item, 'efek_penggunaan'),
+                    'cara_aplikasi' => data_get($item, 'cara_aplikasi'),
+                ]);
+            }
+            
+            return [
+                'id' => data_get($item, 'id'),
+                'kode' => data_get($item, 'kode'),
+                'nama' => data_get($item, 'nama'),
+                'vi' => data_get($item, 'cf_rekomendasi'),
+                'peringkat' => data_get($item, 'peringkat'),
+                'meta' => $meta,
+                'cf_meta' => [
+                    'mb_awal' => 0,
+                    'md_awal' => 0,
+                    'cf_awal' => $type === 'pupuk' 
+                        ? data_get($item, 'cf_penyebab_total', 0) 
+                        : data_get($item, 'cf_solusi_total', 0),
+                    'mb_akhir' => 0,
+                    'md_akhir' => 0,
+                    'cf_akhir' => data_get($item, 'cf_rekomendasi'),
+                ],
+                'interpretation' => data_get($item, 'interpretation'),
+            ];
+        })->sortByDesc('vi')->values()->all();
     }
 
     public function hitungAlternatif(

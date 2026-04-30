@@ -1,16 +1,13 @@
 # Environment
-
 .env
 .env.local
 .env.*
 
 # Dependencies
-
 /vendor
 /node_modules
 
 # Laravel
-
 /storage/*.key
 /storage/logs/*
 /storage/framework/cache/*
@@ -18,19 +15,18 @@
 /storage/framework/views/*
 /bootstrap/cache/*
 
-# Public storage (symlink)
-
+# Public storage
 public/storage
 
 # Editor
-
 .vscode/
 .idea/
 
-# OS / temporary
-
+# Logs & temp
 *.log
 *.tmp
 *.swp
+
+# OS
 .DS_Store
 Thumbs.db
