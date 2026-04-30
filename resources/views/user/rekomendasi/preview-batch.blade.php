@@ -293,7 +293,7 @@
         transition: max-height 0.4s ease-out, padding 0.3s ease;
     }
     .detail-toggle[open] .detail-panel {
-        max-height: 450px;
+        max-height: 500px;
         overflow-y: auto;
         padding: 14px;
     }
@@ -310,7 +310,7 @@
     }
     .detail-list {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 8px;
     }
     .detail-row {
@@ -323,6 +323,7 @@
         display: flex;
         flex-direction: column;
         gap: 4px;
+        min-width: 0;
     }
     .detail-row:hover {
         border-color: #16a34a;
@@ -332,7 +333,7 @@
     .detail-row.full { grid-column: 1 / -1; }
     .detail-row.span2 { grid-column: span 2; }
     .detail-row .dl { 
-        font-size: .65rem; 
+        font-size: .68rem; 
         color: #64748b; 
         font-weight: 700; 
         text-transform: uppercase; 
@@ -340,6 +341,7 @@
         display: flex;
         align-items: center;
         gap: 4px;
+        white-space: nowrap;
     }
     .detail-row .dl::before {
         content: '';
@@ -347,21 +349,23 @@
         height: 3px;
         background: #16a34a;
         border-radius: 50%;
+        flex-shrink: 0;
     }
     .detail-row .dv { 
-        font-size: .78rem; 
+        font-size: .8rem; 
         color: #1e293b; 
         font-weight: 500; 
         word-break: break-word;
         line-height: 1.4;
         display: -webkit-box; 
-        -webkit-line-clamp: 2; 
+        -webkit-line-clamp: 3; 
         -webkit-box-orient: vertical; 
         overflow: hidden; 
+        hyphens: auto;
     }
     .detail-row.full .dv, .detail-row.span2 .dv { 
-        -webkit-line-clamp: 3;
-        font-size: .8rem;
+        -webkit-line-clamp: 4;
+        font-size: .82rem;
     }
     .detail-section-title {
         font-size: .8rem;
@@ -421,7 +425,7 @@
         .disease-meta-grid { grid-template-columns: repeat(3, 1fr); }
         .batch-card { border-radius: 16px; }
         .product-grid-wrapper { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-        .detail-list { grid-template-columns: repeat(2, 1fr); }
+        .detail-list { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
     }
     @media (max-width: 767px) {
         .result-hero { border-radius: 14px; padding: 18px !important; }
@@ -430,13 +434,14 @@
         .disease-media, .media-empty { height: 180px; }
         .product-card-img, .product-card-img-empty { height: 110px; }
         .disease-meta-grid { grid-template-columns: 1fr 1fr; }
-        .detail-list { grid-template-columns: 1fr 1fr; }
+        .detail-list { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
         .detail-row.full { grid-column: 1 / -1; }
         .detail-row.span2 { grid-column: 1 / -1; }
         .product-grid-wrapper { grid-template-columns: 1fr; }
         .action-bar .btn { flex: 1; min-width: 140px; text-align: center; }
         .section-label { font-size: .68rem; }
-        .detail-toggle[open] .detail-panel { max-height: 400px; }
+        .detail-toggle[open] .detail-panel { max-height: 450px; }
+        .detail-row .dv { -webkit-line-clamp: 3; }
     }
     @media (max-width: 480px) {
         .disease-meta-grid { grid-template-columns: 1fr 1fr; }
