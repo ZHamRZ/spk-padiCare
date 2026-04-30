@@ -234,26 +234,44 @@ class RekomendasiController extends Controller
     private function buildPreviewAlternatives(Collection $items, string $type): Collection
     {
         return $items->map(function (array $item) use ($type) {
-            return (object) [
-                'peringkat' => $item['peringkat'],
-                'nilai_vi' => data_get($item, 'vi', data_get($item, 'cf_rekomendasi', 0)),
-                $type => (object) [
-                    'kode' => $item['kode'],
-                    'nama' => $item['nama'],
-                    'gambar_url' => data_get($item, 'meta.gambar_url'),
+            $productData = [
+                'kode' => $item['kode'],
+                'nama' => $item['nama'],
+                'gambar_url' => data_get($item, 'meta.gambar_url'),
+                'gejala_cocok' => data_get($item, 'meta.gejala_cocok', []),
+            ];
+            
+            // Tambahkan field spesifik pupuk
+            if ($type === 'pupuk') {
+                $productData = array_merge($productData, [
                     'kandungan' => data_get($item, 'meta.kandungan'),
                     'kandungan_detail' => data_get($item, 'meta.kandungan_detail'),
-                    'bahan_aktif' => data_get($item, 'meta.bahan_aktif'),
                     'fungsi_utama' => data_get($item, 'meta.fungsi_utama'),
-                    'fungsi' => data_get($item, 'meta.fungsi'),
                     'takaran' => data_get($item, 'meta.takaran'),
+                    'efek_penggunaan' => data_get($item, 'meta.efek_penggunaan'),
+                    'cara_aplikasi' => data_get($item, 'meta.cara_aplikasi'),
+                    'jadwal_umur_aplikasi' => data_get($item, 'meta.jadwal_umur_aplikasi'),
+                    'frekuensi_aplikasi' => data_get($item, 'meta.frekuensi_aplikasi'),
+                ]);
+            } 
+            // Tambahkan field spesifik pestisida
+            else {
+                $productData = array_merge($productData, [
+                    'bahan_aktif' => data_get($item, 'meta.bahan_aktif'),
+                    'fungsi' => data_get($item, 'meta.fungsi'),
                     'dosis' => data_get($item, 'meta.dosis'),
                     'efek_penggunaan' => data_get($item, 'meta.efek_penggunaan'),
                     'cara_aplikasi' => data_get($item, 'meta.cara_aplikasi'),
                     'jadwal_umur_aplikasi' => data_get($item, 'meta.jadwal_umur_aplikasi'),
                     'frekuensi_aplikasi' => data_get($item, 'meta.frekuensi_aplikasi'),
-                    'gejala_cocok' => data_get($item, 'meta.gejala_cocok', []),
-                ],
+                ]);
+            }
+            
+            return (object) [
+                'peringkat' => $item['peringkat'],
+                'nilai_vi' => data_get($item, 'vi', data_get($item, 'cf_rekomendasi', 0)),
+                'adjustment_info' => data_get($item, 'adjustment_info', []),
+                $type => (object) $productData,
             ];
         })->values();
     }
