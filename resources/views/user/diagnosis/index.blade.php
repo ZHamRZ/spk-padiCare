@@ -163,7 +163,24 @@
             }
         });
 
-        // Weight slider functionality
+        // Weight slider functionality - toggle visibility based on checkbox state
+        const checkboxes = document.querySelectorAll('.symptom-checkbox');
+        checkboxes.forEach(checkbox => {
+            const sliderId = checkbox.dataset.weightSlider;
+            const sliderContainer = document.getElementById(sliderId)?.closest('.weight-slider-container');
+            
+            // Initial state: show/hide slider based on checkbox
+            if (sliderContainer) {
+                sliderContainer.style.display = checkbox.checked ? 'block' : 'none';
+            }
+            
+            checkbox.addEventListener('change', function() {
+                if (sliderContainer) {
+                    sliderContainer.style.display = this.checked ? 'block' : 'none';
+                }
+            });
+        });
+        
         const sliders = document.querySelectorAll('.weight-slider');
         sliders.forEach(slider => {
             const display = slider.parentElement.querySelector('.weight-value-display');
@@ -186,7 +203,7 @@
             }
         });
         
-        // Auto-check checkbox when slider is moved
+        // Auto-check checkbox when slider is moved with significant value
         sliders.forEach(slider => {
             slider.addEventListener('change', function() {
                 const card = this.closest('.symptom-card');
@@ -194,6 +211,11 @@
                     const checkbox = card.querySelector('input[type="checkbox"]');
                     if (checkbox && parseInt(this.value) > 50 && !checkbox.checked) {
                         checkbox.checked = true;
+                        // Show slider container
+                        const sliderContainer = this.closest('.weight-slider-container');
+                        if (sliderContainer) {
+                            sliderContainer.style.display = 'block';
+                        }
                         // Trigger visual update
                         const event = new Event('change', { bubbles: true });
                         checkbox.dispatchEvent(event);
@@ -246,8 +268,9 @@
                     @foreach($gejala as $item)
                     <div class="col-md-6 col-xl-4" data-gejala-card data-kode="{{ $item->kode }}" data-nama="{{ $item->nama_gejala }}">
                         <div class="form-check symptom-card position-relative h-100">
-                            <input class="form-check-input" type="checkbox" name="gejala[]" value="{{ $item->id }}"
+                            <input class="form-check-input symptom-checkbox" type="checkbox" name="gejala[]" value="{{ $item->id }}"
                                 id="gejala-{{ $item->id }}"
+                                data-weight-slider="weight-slider-{{ $item->id }}"
                                 {{ in_array($item->id, old('gejala', [])) ? 'checked' : '' }}>
                             <label class="form-check-label" for="gejala-{{ $item->id }}">
                                 <div class="symptom-shell h-100">
@@ -272,6 +295,7 @@
                                         </div>
                                         <input type="range" 
                                                class="weight-slider" 
+                                               id="weight-slider-{{ $item->id }}"
                                                name="gejala_weights[{{ $item->id }}]" 
                                                min="0" 
                                                max="100" 
