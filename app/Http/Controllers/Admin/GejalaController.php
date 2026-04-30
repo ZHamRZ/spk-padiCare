@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Gejala;
 use App\Support\AutoCodeGenerator;
+use App\Support\ProjectImage;
 use Illuminate\Http\Request;
 
 class GejalaController extends Controller
@@ -30,8 +31,17 @@ class GejalaController extends Controller
         $request->validate([
             'kode'        => 'required|string|max:10|unique:gejala,kode',
             'nama_gejala' => 'required|string|max:200',
+            'gambar'      => Gejala::supportsImages() ? 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048' : 'nullable',
         ]);
-        Gejala::create($request->only('kode', 'nama_gejala'));
+
+        $data = $request->only('kode', 'nama_gejala');
+
+        if (Gejala::supportsImages() && $request->hasFile('gambar')) {
+            $data['gambar'] = ProjectImage::store($request->file('gambar'), 'gejala');
+        }
+
+        Gejala::create($data);
+
         return redirect()->route('admin.gejala.index')
             ->with('success', 'Gejala berhasil ditambahkan.');
     }
@@ -46,14 +56,28 @@ class GejalaController extends Controller
         $request->validate([
             'kode'        => 'required|string|max:10|unique:gejala,kode,' . $gejala->id,
             'nama_gejala' => 'required|string|max:200',
+            'gambar'      => Gejala::supportsImages() ? 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048' : 'nullable',
         ]);
-        $gejala->update($request->only('kode', 'nama_gejala'));
+
+        $data = $request->only('kode', 'nama_gejala');
+
+        if (Gejala::supportsImages() && $request->hasFile('gambar')) {
+            ProjectImage::delete($gejala->gambar);
+            $data['gambar'] = ProjectImage::store($request->file('gambar'), 'gejala');
+        }
+
+        $gejala->update($data);
+
         return redirect()->route('admin.gejala.index')
             ->with('success', 'Gejala berhasil diperbarui.');
     }
 
     public function destroy(Gejala $gejala)
     {
+        if (Gejala::supportsImages() && $gejala->gambar) {
+            ProjectImage::delete($gejala->gambar);
+        }
+
         $gejala->delete();
         return redirect()->route('admin.gejala.index')
             ->with('success', 'Gejala berhasil dihapus.');

@@ -80,7 +80,7 @@ class DashboardController extends Controller
 
         $tips = [
             'Pilih gejala yang paling jelas terlihat pada tanaman agar identifikasi lebih akurat.',
-            'Pastikan hasil diagnosis diproses setelah admin melengkapi rating SAW untuk pupuk dan pestisida.',
+            'Pastikan hasil diagnosis diproses setelah admin melengkapi data analisis untuk pupuk dan pestisida.',
             'Gunakan riwayat kasus di beranda untuk menemukan penanganan yang pernah dipakai pada gejala yang mirip.',
         ];
 

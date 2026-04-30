@@ -7,7 +7,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="fw-bold mb-1">Kelola Data Pupuk</h4>
-        <p class="text-muted mb-0">Alternatif pupuk akan dipakai dalam proses perhitungan SAW.</p>
+        <p class="text-muted mb-0">Alternatif pupuk akan dipakai dalam basis pengetahuan dan rekomendasi sistem pakar.</p>
     </div>
     <a href="{{ route('admin.pupuk.create') }}" class="btn btn-spk">Tambah Pupuk</a>
 </div>

@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Kriteria')
-@section('page-title', 'Edit Kriteria')
+@section('title', 'Edit Parameter Prioritas')
+@section('page-title', 'Edit Parameter Prioritas')
 
 @section('content')
 <div class="card">
-    <div class="card-header">Form Edit Kriteria</div>
+    <div class="card-header">Form Edit Parameter Prioritas</div>
     <div class="card-body">
         <form action="{{ route('admin.kriteria.update', $kriteria) }}" method="POST">
             @csrf
@@ -16,7 +16,7 @@
                     <input type="text" value="{{ $kriteria->kode }}" class="form-control" disabled>
                 </div>
                 <div class="col-md-5">
-                    <label class="form-label">Nama Kriteria</label>
+                    <label class="form-label">Nama Parameter</label>
                     <input type="text" name="nama" value="{{ old('nama', $kriteria->nama) }}" class="form-control @error('nama') is-invalid @enderror">
                     @error('nama')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -29,8 +29,9 @@
                     @error('jenis')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Bobot</label>
+                    <label class="form-label">Faktor Dasar</label>
                     <input type="number" step="0.01" min="0" max="1" name="bobot" value="{{ old('bobot', $kriteria->bobot) }}" class="form-control @error('bobot') is-invalid @enderror">
+                    <div class="form-text">Dipakai sebagai pengaruh awal saat rule disesuaikan dengan prioritas pengguna.</div>
                     @error('bobot')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12">
@@ -40,7 +41,6 @@
                 </div>
             </div>
             <div class="d-flex gap-2 mt-4">
-                <a href="{{ route('admin.kriteria.index') }}" class="btn btn-outline-secondary">Kembali</a>
                 <button type="submit" class="btn btn-spk">Perbarui</button>
             </div>
         </form>

@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use App\Support\CfSchema;
+use App\Support\ProjectImage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Support\Facades\Storage;
 
 class Penyakit extends Model
 {
@@ -15,12 +16,50 @@ class Penyakit extends Model
 
     public function gejala()
     {
-        return $this->belongsToMany(
+        $relation = $this->belongsToMany(
             Gejala::class,
             'penyakit_gejala',
             'id_penyakit',
             'id_gejala'
         );
+
+        if (CfSchema::hasSymptomCfColumns()) {
+            $relation->withPivot(['mb', 'md']);
+        }
+
+        return $relation;
+    }
+
+    public function pupuk()
+    {
+        $relation = $this->belongsToMany(
+            Pupuk::class,
+            'penyakit_pupuk',
+            'id_penyakit',
+            'id_pupuk'
+        );
+
+        if (CfSchema::hasPupukRuleTable()) {
+            $relation->withPivot(['mb', 'md'])->withTimestamps();
+        }
+
+        return $relation;
+    }
+
+    public function pestisida()
+    {
+        $relation = $this->belongsToMany(
+            Pestisida::class,
+            'penyakit_pestisida',
+            'id_penyakit',
+            'id_pestisida'
+        );
+
+        if (CfSchema::hasPestisidaRuleTable()) {
+            $relation->withPivot(['mb', 'md'])->withTimestamps();
+        }
+
+        return $relation;
     }
 
     public function ratingPupuk()
@@ -40,6 +79,6 @@ class Penyakit extends Model
 
     public function getGambarUrlAttribute(): ?string
     {
-        return $this->gambar ? Storage::url($this->gambar) : null;
+        return ProjectImage::url($this->gambar);
     }
 }

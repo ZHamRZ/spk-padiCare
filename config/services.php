@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'sms' => [
+        'driver' => env('SMS_DRIVER', 'log'),
+        'log_channel' => env('SMS_LOG_CHANNEL', env('LOG_CHANNEL', 'stack')),
+        'sender' => env('SMS_SENDER', 'SPK Padi'),
+    ],
+
 ];

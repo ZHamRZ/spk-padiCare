@@ -19,18 +19,18 @@ class DatabaseSeeder extends Seeder
     {
         // ── USERS ────────────────────────────────────────────
         User::insert([
-            ['nama' => 'Administrator',  'username' => 'admin',      'password' => Hash::make('admin123'),   'role' => 'admin',   'created_at' => now(), 'updated_at' => now()],
-            ['nama' => 'H. Badaruddin',  'username' => 'badaruddin', 'password' => Hash::make('petani123'),  'role' => 'petani',  'created_at' => now(), 'updated_at' => now()],
-            ['nama' => 'Diana Lestari',  'username' => 'diana',      'password' => Hash::make('petani123'),  'role' => 'petani',  'created_at' => now(), 'updated_at' => now()],
+            ['nama' => 'Administrator',  'username' => 'admin',      'password' => Hash::make('admin123'),   'role' => 'admin',  'no_telp' => '628123450000', 'created_at' => now(), 'updated_at' => now()],
+            ['nama' => 'H. Badaruddin',  'username' => 'badaruddin', 'password' => Hash::make('petani123'),  'role' => 'petani', 'no_telp' => '628123450001', 'created_at' => now(), 'updated_at' => now()],
+            ['nama' => 'Diana Lestari',  'username' => 'diana',      'password' => Hash::make('petani123'),  'role' => 'petani', 'no_telp' => '628123450002', 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         // ── PENYAKIT ──────────────────────────────────────────
         $penyakit = [
-            ['kode' => 'P01', 'nama' => 'Blast (Blas)',                'deskripsi' => 'Penyakit yang disebabkan jamur Pyricularia oryzae, menyerang daun, leher malai, dan bulir padi.'],
-            ['kode' => 'P02', 'nama' => 'Hawar Daun Bakteri (Kresek)', 'deskripsi' => 'Penyakit bakteri Xanthomonas oryzae pv. oryzae, menyebabkan daun menguning dari ujung.'],
-            ['kode' => 'P03', 'nama' => 'Tungro',                      'deskripsi' => 'Penyakit virus ditularkan wereng hijau, menyebabkan tanaman kerdil dan menguning.'],
-            ['kode' => 'P04', 'nama' => 'Busuk Pelepah (Sheath Blight)', 'deskripsi' => 'Penyakit jamur Rhizoctonia solani, menyerang pelepah daun padi.'],
-            ['kode' => 'P05', 'nama' => 'Bercak Coklat (Brown Spot)',  'deskripsi' => 'Penyakit jamur Helminthosporium oryzae, menyebabkan bercak coklat pada daun dan gabah.'],
+            ['kode' => 'P01', 'nama' => 'Blast (Blas)',                'deskripsi' => 'Penyakit yang disebabkan jamur Pyricularia oryzae. Umumnya menyerang daun dan leher malai padi.'],
+            ['kode' => 'P02', 'nama' => 'Hawar Daun Bakteri (Kresek)', 'deskripsi' => 'Penyakit yang disebabkan bakteri Xanthomonas oryzae pv. oryzae.'],
+            ['kode' => 'P03', 'nama' => 'Tungro',                      'deskripsi' => 'Penyakit virus kompleks RTBV dan RTSV yang ditularkan oleh hama wereng hijau (Nephotettix virescens).'],
+            ['kode' => 'P04', 'nama' => 'Busuk Pelepah (Sheath Blight)', 'deskripsi' => 'Penyakit yang disebabkan jamur Rhizoctonia solani dan menyerang pelepah daun padi.'],
+            ['kode' => 'P05', 'nama' => 'Bercak Coklat (Brown Spot)',  'deskripsi' => 'Penyakit yang disebabkan jamur Bipolaris oryzae, dahulu dikenal sebagai Helminthosporium oryzae.'],
         ];
         foreach ($penyakit as $p) {
             Penyakit::create($p);
@@ -38,21 +38,21 @@ class DatabaseSeeder extends Seeder
 
         // ── GEJALA ────────────────────────────────────────────
         $gejala = [
-            ['kode' => 'G01', 'nama_gejala' => 'Bercak belah ketupat pada daun'],
-            ['kode' => 'G02', 'nama_gejala' => 'Leher malai membusuk dan patah'],
-            ['kode' => 'G03', 'nama_gejala' => 'Bulir padi tidak berisi (hampa)'],
-            ['kode' => 'G04', 'nama_gejala' => 'Daun menguning dari ujung seperti terbakar'],
-            ['kode' => 'G05', 'nama_gejala' => 'Tepi daun mengering dan melengkung'],
-            ['kode' => 'G06', 'nama_gejala' => 'Tanaman layu pada serangan berat'],
-            ['kode' => 'G07', 'nama_gejala' => 'Tanaman kerdil dan pertumbuhan terhambat'],
-            ['kode' => 'G08', 'nama_gejala' => 'Daun berwarna kuning hingga oranye'],
-            ['kode' => 'G09', 'nama_gejala' => 'Anakan sedikit dan malai tidak berkembang'],
-            ['kode' => 'G10', 'nama_gejala' => 'Bercak oval keabu-abuan pada pelepah daun'],
-            ['kode' => 'G11', 'nama_gejala' => 'Bercak meluas ke atas hingga daun bendera'],
-            ['kode' => 'G12', 'nama_gejala' => 'Tanaman mudah rebah pada serangan parah'],
-            ['kode' => 'G13', 'nama_gejala' => 'Bercak coklat oval pada daun'],
-            ['kode' => 'G14', 'nama_gejala' => 'Bercak pada gabah menyebabkan bulir berwarna hitam'],
-            ['kode' => 'G15', 'nama_gejala' => 'Daun mengering lebih cepat dari seharusnya'],
+            ['kode' => 'G01', 'nama_gejala' => 'Bercak belah ketupat (ujung runcing) pada daun'],
+            ['kode' => 'G02', 'nama_gejala' => 'Leher malai busuk, berubah warna coklat atau hitam dan patah'],
+            ['kode' => 'G03', 'nama_gejala' => 'Bulir padi hampa atau tidak berisi'],
+            ['kode' => 'G04', 'nama_gejala' => 'Daun menguning mulai dari ujung dan tepi (layu)'],
+            ['kode' => 'G05', 'nama_gejala' => 'Tepi daun mengering, bergelombang, dan berwarna kelabu'],
+            ['kode' => 'G06', 'nama_gejala' => 'Seluruh tanaman layu mendadak (serangan berat)'],
+            ['kode' => 'G07', 'nama_gejala' => 'Tanaman menjadi sangat kerdil dibanding tanaman sehat'],
+            ['kode' => 'G08', 'nama_gejala' => 'Daun berubah warna menjadi kuning oranye'],
+            ['kode' => 'G09', 'nama_gejala' => 'Jumlah anakan berkurang drastis dan malai tidak keluar'],
+            ['kode' => 'G10', 'nama_gejala' => 'Bercak oval keabu-abuan pada pelepah (dekat air)'],
+            ['kode' => 'G11', 'nama_gejala' => 'Bercak meluas ke atas membentuk pola seperti awan'],
+            ['kode' => 'G12', 'nama_gejala' => 'Batang tanaman membusuk dan mudah rebah'],
+            ['kode' => 'G13', 'nama_gejala' => 'Bercak coklat oval merata (seperti biji wijen)'],
+            ['kode' => 'G14', 'nama_gejala' => 'Bercak hitam atau coklat pada kulit gabah'],
+            ['kode' => 'G15', 'nama_gejala' => 'Daun mengering dan gugur lebih cepat'],
         ];
         foreach ($gejala as $g) {
             Gejala::create($g);
@@ -65,11 +65,11 @@ class DatabaseSeeder extends Seeder
         $p4 = Penyakit::where('kode', 'P04')->first();
         $p5 = Penyakit::where('kode', 'P05')->first();
 
-        $p1->gejala()->attach(Gejala::whereIn('kode', ['G01', 'G02', 'G03'])->pluck('id'));
-        $p2->gejala()->attach(Gejala::whereIn('kode', ['G04', 'G05', 'G06'])->pluck('id'));
+        $p1->gejala()->attach(Gejala::whereIn('kode', ['G01', 'G02', 'G03', 'G14'])->pluck('id'));
+        $p2->gejala()->attach(Gejala::whereIn('kode', ['G04', 'G05', 'G06', 'G08'])->pluck('id'));
         $p3->gejala()->attach(Gejala::whereIn('kode', ['G07', 'G08', 'G09'])->pluck('id'));
-        $p4->gejala()->attach(Gejala::whereIn('kode', ['G10', 'G11', 'G12'])->pluck('id'));
-        $p5->gejala()->attach(Gejala::whereIn('kode', ['G13', 'G14', 'G15'])->pluck('id'));
+        $p4->gejala()->attach(Gejala::whereIn('kode', ['G06', 'G10', 'G11', 'G12'])->pluck('id'));
+        $p5->gejala()->attach(Gejala::whereIn('kode', ['G03', 'G13', 'G14', 'G15'])->pluck('id'));
 
         // ── KRITERIA ──────────────────────────────────────────
         Kriteria::insert([
@@ -364,5 +364,7 @@ class DatabaseSeeder extends Seeder
         foreach ($ratingPestisida as $r) {
             RatingPestisida::create(['id_pestisida' => $r[0], 'id_kriteria' => $r[1], 'id_penyakit' => $r[2], 'nilai' => $r[3]]);
         }
+
+        $this->call(CertaintyFactorRuleSeeder::class);
     }
 }

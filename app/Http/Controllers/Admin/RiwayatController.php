@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Rekomendasi;
-use App\Services\SAWService;
+use App\Services\RecommendationService;
 
 class RiwayatController extends Controller
 {
-    public function __construct(private SAWService $saw) {}
+    public function __construct(private RecommendationService $recommendationService) {}
 
     public function index()
     {
@@ -40,7 +40,7 @@ class RiwayatController extends Controller
             'detailPestisida.pestisida',
         ])->findOrFail($id);
 
-        $preview = $this->saw->preview($rekomendasi->id_penyakit, $rekomendasi->preferensi_pengguna ?? []);
+        $preview = $this->recommendationService->previewForDisease($rekomendasi->id_penyakit, $rekomendasi->preferensi_pengguna ?? []);
 
         return view('admin.riwayat.detail', compact('rekomendasi', 'preview'));
     }

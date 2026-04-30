@@ -3,80 +3,95 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Kriteria;
-use App\Models\Penyakit;
+use App\Models\Gejala;
+use App\Models\GejalaPestisida;
+use App\Models\GejalaPupuk;
 use App\Models\Pupuk;
 use App\Models\Pestisida;
-use App\Models\RatingPupuk;
-use App\Models\RatingPestisida;
+use App\Support\CfSchema;
 use Illuminate\Http\Request;
 
 class RatingController extends Controller
 {
-    // ── Rating Pupuk ─────────────────────────────────────────
     public function pupuk()
     {
-        $penyakit = Penyakit::orderBy('kode')->get();
-        $pupuk    = Pupuk::orderBy('kode')->get();
-        $kriteria = Kriteria::orderBy('kode')->get();
-        $ratings  = RatingPupuk::all()->keyBy(fn($r) => "{$r->id_pupuk}_{$r->id_kriteria}_{$r->id_penyakit}");
+        $gejala = Gejala::orderBy('kode')->get();
+        $pupuk = Pupuk::orderBy('kode')->get();
+        $cfReady = CfSchema::hasPupukRuleTable();
+        $rules = $cfReady
+            ? GejalaPupuk::all()->keyBy(fn ($item) => "{$item->id_gejala}_{$item->id_pupuk}")
+            : collect();
 
-        return view('admin.rating.pupuk', compact('penyakit', 'pupuk', 'kriteria', 'ratings'));
+        return view('admin.rating.pupuk', compact('gejala', 'pupuk', 'rules', 'cfReady'));
     }
 
     public function simpanPupuk(Request $request)
     {
+        if (!CfSchema::hasPupukRuleTable()) {
+            return redirect()->route('admin.rating.pupuk')
+                ->with('error', 'Tabel rule CF pupuk belum tersedia. Jalankan migration database terlebih dahulu.');
+        }
+
         $request->validate([
-            'rating'           => 'required|array',
-            'rating.*.*.*'     => 'required|numeric|min:1|max:5',
+            'rules' => 'required|array',
+            'rules.*.*.mb' => 'required|numeric|min:0|max:1',
+            'rules.*.*.md' => 'required|numeric|min:0|max:1',
         ]);
 
-        // rating[id_penyakit][id_pupuk][id_kriteria] = nilai
-        foreach ($request->rating as $idPenyakit => $perPupuk) {
-            foreach ($perPupuk as $idPupuk => $perKriteria) {
-                foreach ($perKriteria as $idKriteria => $nilai) {
-                    RatingPupuk::updateOrCreate(
-                        ['id_pupuk' => $idPupuk, 'id_kriteria' => $idKriteria, 'id_penyakit' => $idPenyakit],
-                        ['nilai' => $nilai]
-                    );
-                }
+        foreach ($request->rules as $idGejala => $items) {
+            foreach ($items as $idPupuk => $rule) {
+                GejalaPupuk::updateOrCreate(
+                    ['id_gejala' => $idGejala, 'id_pupuk' => $idPupuk],
+                    [
+                        'mb' => round((float) $rule['mb'], 3),
+                        'md' => round((float) $rule['md'], 3),
+                    ]
+                );
             }
         }
 
         return redirect()->route('admin.rating.pupuk')
-            ->with('success', 'Rating pupuk berhasil disimpan.');
+            ->with('success', 'Aturan CF pupuk berhasil disimpan.');
     }
 
-    // ── Rating Pestisida ──────────────────────────────────────
     public function pestisida()
     {
-        $penyakit  = Penyakit::orderBy('kode')->get();
+        $gejala = Gejala::orderBy('kode')->get();
         $pestisida = Pestisida::orderBy('kode')->get();
-        $kriteria  = Kriteria::orderBy('kode')->get();
-        $ratings   = RatingPestisida::all()->keyBy(fn($r) => "{$r->id_pestisida}_{$r->id_kriteria}_{$r->id_penyakit}");
+        $cfReady = CfSchema::hasPestisidaRuleTable();
+        $rules = $cfReady
+            ? GejalaPestisida::all()->keyBy(fn ($item) => "{$item->id_gejala}_{$item->id_pestisida}")
+            : collect();
 
-        return view('admin.rating.pestisida', compact('penyakit', 'pestisida', 'kriteria', 'ratings'));
+        return view('admin.rating.pestisida', compact('gejala', 'pestisida', 'rules', 'cfReady'));
     }
 
     public function simpanPestisida(Request $request)
     {
+        if (!CfSchema::hasPestisidaRuleTable()) {
+            return redirect()->route('admin.rating.pestisida')
+                ->with('error', 'Tabel rule CF pestisida belum tersedia. Jalankan migration database terlebih dahulu.');
+        }
+
         $request->validate([
-            'rating'       => 'required|array',
-            'rating.*.*.*' => 'required|numeric|min:1|max:5',
+            'rules' => 'required|array',
+            'rules.*.*.mb' => 'required|numeric|min:0|max:1',
+            'rules.*.*.md' => 'required|numeric|min:0|max:1',
         ]);
 
-        foreach ($request->rating as $idPenyakit => $perPestisida) {
-            foreach ($perPestisida as $idPestisida => $perKriteria) {
-                foreach ($perKriteria as $idKriteria => $nilai) {
-                    RatingPestisida::updateOrCreate(
-                        ['id_pestisida' => $idPestisida, 'id_kriteria' => $idKriteria, 'id_penyakit' => $idPenyakit],
-                        ['nilai' => $nilai]
-                    );
-                }
+        foreach ($request->rules as $idGejala => $items) {
+            foreach ($items as $idPestisida => $rule) {
+                GejalaPestisida::updateOrCreate(
+                    ['id_gejala' => $idGejala, 'id_pestisida' => $idPestisida],
+                    [
+                        'mb' => round((float) $rule['mb'], 3),
+                        'md' => round((float) $rule['md'], 3),
+                    ]
+                );
             }
         }
 
         return redirect()->route('admin.rating.pestisida')
-            ->with('success', 'Rating pestisida berhasil disimpan.');
+            ->with('success', 'Aturan CF pestisida berhasil disimpan.');
     }
 }

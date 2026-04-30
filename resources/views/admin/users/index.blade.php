@@ -12,8 +12,7 @@
                 <thead class="table-light">
                     <tr>
                         <th>Nama</th>
-                        <th>Username</th>
-                        <th>Email</th>
+                        <th>No. HP</th>
                         <th>Riwayat</th>
                         <th>Tanggal Daftar</th>
                         <th class="text-end">Aksi</th>
@@ -23,8 +22,7 @@
                     @forelse($users as $user)
                     <tr>
                         <td>{{ $user->nama }}</td>
-                        <td>{{ $user->username }}</td>
-                        <td>{{ $user->email ?: '-' }}</td>
+                        <td>{{ $user->no_telp ?: '-' }}</td>
                         <td>{{ $user->rekomendasi_count }} riwayat</td>
                         <td>{{ optional($user->created_at)->format('d M Y H:i') }}</td>
                         <td class="text-end">
@@ -40,7 +38,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="6" class="text-center py-4 text-muted">Belum ada pengguna petani.</td></tr>
+                    <tr><td colspan="5" class="text-center py-4 text-muted">Belum ada pengguna petani.</td></tr>
                     @endforelse
                 </tbody>
             </table>

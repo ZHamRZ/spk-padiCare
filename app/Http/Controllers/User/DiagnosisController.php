@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Gejala;
 use App\Models\Kriteria;
 use App\Models\Penyakit;
-use App\Services\SAWService;
+use App\Services\DiagnosisService;
+use App\Services\RecommendationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -14,7 +15,10 @@ use RuntimeException;
 
 class DiagnosisController extends Controller
 {
-    public function __construct(private SAWService $saw) {}
+    public function __construct(
+        private DiagnosisService $diagnosisService,
+        private RecommendationService $recommendationService,
+    ) {}
 
     public function index()
     {
@@ -33,23 +37,9 @@ class DiagnosisController extends Controller
             'gejala.min' => 'Pilih minimal 1 gejala yang dialami tanaman.',
         ]);
 
-        $idGejalaInput = $request->gejala;
-        $penyakitList = Penyakit::with('gejala')->get();
-
-        $skorPenyakit = [];
-        foreach ($penyakitList as $penyakit) {
-            $idGejalaPenyakit = $penyakit->gejala->pluck('id')->toArray();
-            $jumlahCocok = count(array_intersect($idGejalaInput, $idGejalaPenyakit));
-
-            if ($jumlahCocok > 0) {
-                $skorPenyakit[] = [
-                    'penyakit' => $penyakit,
-                    'cocok' => $jumlahCocok,
-                    'total' => count($idGejalaPenyakit),
-                    'persen' => round($jumlahCocok / count($idGejalaPenyakit) * 100),
-                ];
-            }
-        }
+        $idGejalaInput = collect($request->gejala)->map(fn ($id) => (int) $id)->all();
+        $diagnosisResult = $this->diagnosisService->identify($idGejalaInput);
+        $skorPenyakit = $diagnosisResult['diagnoses'];
 
         if (empty($skorPenyakit)) {
             return back()
@@ -57,13 +47,38 @@ class DiagnosisController extends Controller
                 ->with('error', 'Penyakit tidak ditemukan berdasarkan gejala yang dipilih. Coba tambahkan gejala lain atau konsultasikan dengan pakar pertanian.');
         }
 
-        usort($skorPenyakit, fn($a, $b) => $b['persen'] <=> $a['persen']);
+        session([
+            'diagnosis_result' => [
+                'skorPenyakit' => $skorPenyakit,
+                'gejala_ids' => $idGejalaInput,
+                'summary' => $diagnosisResult['summary'],
+            ],
+        ]);
 
-        $gejalaInput = Gejala::whereIn('id', $idGejalaInput)->get();
+        return redirect()->route('user.diagnosis.hasil');
+    }
+
+    public function hasilIdentifikasi()
+    {
+        $payload = session('diagnosis_result');
+
+        if (!$payload) {
+            return redirect()
+                ->route('user.diagnosis.index')
+                ->with('info', 'Silakan pilih gejala terlebih dahulu untuk melakukan identifikasi penyakit.');
+        }
+
+        $gejalaInput = Gejala::whereIn('id', $payload['gejala_ids'] ?? [])->get();
         $kriteria = Kriteria::orderBy('kode')->get();
-        $presetPreferensi = $this->saw->getPreferencePresets();
+        $presetPreferensi = $this->recommendationService->getPreferencePresets();
 
-        return view('user.diagnosis.hasil', compact('skorPenyakit', 'gejalaInput', 'kriteria', 'presetPreferensi'));
+        return view('user.diagnosis.hasil', [
+            'skorPenyakit' => $payload['skorPenyakit'] ?? [],
+            'gejalaInput' => $gejalaInput,
+            'kriteria' => $kriteria,
+            'presetPreferensi' => $presetPreferensi,
+            'diagnosisSummary' => $payload['summary'] ?? [],
+        ]);
     }
 
     public function proses(Request $request)
@@ -73,20 +88,30 @@ class DiagnosisController extends Controller
             'id_penyakit.*' => 'exists:penyakit,id',
             'gejala_terpilih' => 'required|array|min:1',
             'gejala_terpilih.*' => 'exists:gejala,id',
-            'preferensi_tipe' => 'required|string|in:seimbang,efektif,hemat,aman,custom',
+            'preferensi_tipe' => 'required|string|in:seimbang,hemat,efisiensi,custom,efektif,aman',
             'preferensi_alasan' => 'nullable|string|max:150',
             'preferensi_catatan' => 'nullable|string|max:500',
             'preferensi_kriteria' => 'nullable|array',
-            'preferensi_kriteria.*' => 'nullable|integer|min:1|max:5',
+            'preferensi_kriteria.*' => 'nullable|integer|min:0|max:100',
+        ], [
+            'id_penyakit.required' => 'Hasil identifikasi belum siap diproses. Silakan ulangi identifikasi lalu coba lihat rekomendasi lagi.',
+            'id_penyakit.*.exists' => 'Penyakit hasil identifikasi tidak ditemukan. Silakan ulangi identifikasi.',
+            'gejala_terpilih.required' => 'Gejala terpilih tidak ditemukan. Silakan ulangi identifikasi.',
+            'preferensi_tipe.required' => 'Silakan pilih prioritas rekomendasi terlebih dahulu.',
         ]);
+
+        if (!$request->filled('id_penyakit.0')) {
+            return back()->with('error', 'Penyakit hasil identifikasi belum terbaca. Silakan ulangi identifikasi lalu coba lihat rekomendasi lagi.');
+        }
 
         $gejalaTerpilih = Gejala::whereIn('id', $request->input('gejala_terpilih', []))
             ->orderBy('kode')
-            ->get(['id', 'kode', 'nama_gejala'])
+            ->get(Gejala::selectableColumns())
             ->map(fn($item) => [
                 'id' => $item->id,
                 'kode' => $item->kode,
                 'nama_gejala' => $item->nama_gejala,
+                'gambar_url' => $item->gambar_url,
             ])
             ->values()
             ->all();
@@ -99,7 +124,7 @@ class DiagnosisController extends Controller
             'kriteria' => $request->input('preferensi_kriteria', []),
         ];
 
-        $presets = $this->saw->getPreferencePresets();
+        $presets = $this->recommendationService->getPreferencePresets();
         $idPenyakitList = collect($request->input('id_penyakit', []))
             ->map(fn($id) => (int) $id)
             ->unique()
@@ -111,9 +136,9 @@ class DiagnosisController extends Controller
 
             foreach ($idPenyakitList as $idPenyakit) {
                 $penyakit = $penyakitList->get($idPenyakit);
-                $preview = $this->saw->preview($idPenyakit, $preferensi);
+                $preview = $this->recommendationService->previewForDisease($idPenyakit, $preferensi);
                 $rekomendasi = Auth::check()
-                    ? $this->saw->hitung(Auth::id(), $idPenyakit, $preferensi)
+                    ? $this->recommendationService->saveForUser(Auth::id(), $idPenyakit, $preferensi)
                     : null;
 
                 $payloadItems[] = [

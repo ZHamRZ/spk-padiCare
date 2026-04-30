@@ -5,14 +5,15 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\Penyakit;
 use App\Models\Rekomendasi;
-use App\Services\SAWService;
+use App\Services\RecommendationService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class RekomendasiController extends Controller
 {
-    public function __construct(private SAWService $saw) {}
+    public function __construct(private RecommendationService $recommendationService) {}
 
     public function show(int $id)
     {
@@ -51,7 +52,7 @@ class RekomendasiController extends Controller
             ->where('id_user', Auth::id())
             ->findOrFail($id);
 
-        $preview = $this->saw->preview($rekomendasi->id_penyakit, $rekomendasi->preferensi_pengguna ?? []);
+        $preview = $this->recommendationService->previewForDisease($rekomendasi->id_penyakit, $rekomendasi->preferensi_pengguna ?? []);
 
         return view('user.rekomendasi.detail', [
             'rekomendasi' => $rekomendasi,
@@ -67,7 +68,7 @@ class RekomendasiController extends Controller
         if ($hasilDiagnosa->count() !== 1) {
             return redirect()
                 ->route('user.rekomendasi.preview')
-                ->with('info', 'Detail perhitungan SAW ditampilkan untuk satu penyakit. Silakan pilih satu penyakit jika ingin melihat detail perhitungannya.');
+                ->with('info', 'Detail analisis sistem pakar ditampilkan untuk satu penyakit. Silakan pilih satu penyakit jika ingin melihat detail perhitungannya.');
         }
 
         $item = $hasilDiagnosa->first();
@@ -79,10 +80,10 @@ class RekomendasiController extends Controller
         ]);
     }
 
-    public function cetak(int $id)
+    public function cetak(Request $request, int $id)
     {
         $rekomendasi = Rekomendasi::with([
-            'penyakit',
+            'penyakit.gejala:id,kode,nama_gejala,gambar',
             'user',
             'detailPupuk.pupuk',
             'detailPestisida.pestisida',
@@ -90,7 +91,34 @@ class RekomendasiController extends Controller
             ->where('id_user', Auth::id())
             ->findOrFail($id);
 
+        if ($request->boolean('download')) {
+            $html = view('user.rekomendasi.cetak', compact('rekomendasi'))->render();
+
+            return response($html)
+                ->header('Content-Type', 'text/html; charset=UTF-8')
+                ->header('Content-Disposition', 'attachment; filename="hasil-rekomendasi-' . $rekomendasi->id . '.html"');
+        }
+
         return view('user.rekomendasi.cetak', compact('rekomendasi'));
+    }
+
+    public function previewCetak(Request $request)
+    {
+        $hasilDiagnosa = $this->buildGuestPreviewCollection();
+
+        if ($request->boolean('download')) {
+            $html = view('user.rekomendasi.cetak-preview', [
+                'hasilDiagnosa' => $hasilDiagnosa,
+            ])->render();
+
+            return response($html)
+                ->header('Content-Type', 'text/html; charset=UTF-8')
+                ->header('Content-Disposition', 'attachment; filename="hasil-rekomendasi-preview.html"');
+        }
+
+        return view('user.rekomendasi.cetak-preview', [
+            'hasilDiagnosa' => $hasilDiagnosa,
+        ]);
     }
 
     private function buildGuestPreview(): array
@@ -101,9 +129,11 @@ class RekomendasiController extends Controller
             throw new NotFoundHttpException('Preview rekomendasi tidak ditemukan. Silakan lakukan diagnosis kembali.');
         }
 
+        $penyakitModel = Penyakit::with('gejala:id,kode,nama_gejala,gambar')->find($payload['penyakit_id']);
         $penyakit = new Penyakit([
             'id' => $payload['penyakit_id'],
             'nama' => $payload['penyakit_nama'],
+            'gambar' => $penyakitModel?->gambar,
         ]);
 
         $rekomendasi = (object) [
@@ -111,6 +141,10 @@ class RekomendasiController extends Controller
             'penyakit' => $penyakit,
             'preferensi_label' => $payload['preferensi_label'] ?? null,
             'preferensi_pengguna' => $payload['preferensi_pengguna'] ?? [],
+            'gejala_cocok' => $this->resolveMatchedSymptoms(
+                collect($payload['preferensi_pengguna']['gejala_terpilih'] ?? []),
+                $penyakitModel?->gejala ?? collect()
+            ),
             'detailPupuk' => $this->buildPreviewAlternatives(collect(data_get($payload, 'preview.pupuk', [])), 'pupuk'),
             'detailPestisida' => $this->buildPreviewAlternatives(collect(data_get($payload, 'preview.pestisida', [])), 'pestisida'),
         ];
@@ -132,11 +166,12 @@ class RekomendasiController extends Controller
                     throw new NotFoundHttpException('Preview rekomendasi tidak lengkap. Silakan lakukan diagnosis kembali.');
                 }
 
-                $penyakitModel = Penyakit::with('gejala:id,kode,nama_gejala')->find($item['penyakit_id']);
+                $penyakitModel = Penyakit::with('gejala:id,kode,nama_gejala,gambar')->find($item['penyakit_id']);
 
                 $penyakit = new Penyakit([
                     'id' => $item['penyakit_id'],
                     'nama' => $item['penyakit_nama'],
+                    'gambar' => $penyakitModel?->gambar,
                 ]);
 
                 return [
@@ -178,6 +213,7 @@ class RekomendasiController extends Controller
                 'id' => $gejala->id,
                 'kode' => $gejala->kode,
                 'nama_gejala' => $gejala->nama_gejala,
+                'gambar_url' => $gejala->gambar_url,
             ])
             ->values()
             ->all();
@@ -192,7 +228,7 @@ class RekomendasiController extends Controller
                 $type => (object) [
                     'kode' => $item['kode'],
                     'nama' => $item['nama'],
-                    'gambar_url' => null,
+                    'gambar_url' => data_get($item, 'meta.gambar_url'),
                     'kandungan' => data_get($item, 'meta.kandungan'),
                     'kandungan_detail' => data_get($item, 'meta.kandungan_detail'),
                     'bahan_aktif' => data_get($item, 'meta.bahan_aktif'),
@@ -204,6 +240,7 @@ class RekomendasiController extends Controller
                     'cara_aplikasi' => data_get($item, 'meta.cara_aplikasi'),
                     'jadwal_umur_aplikasi' => data_get($item, 'meta.jadwal_umur_aplikasi'),
                     'frekuensi_aplikasi' => data_get($item, 'meta.frekuensi_aplikasi'),
+                    'gejala_cocok' => data_get($item, 'meta.gejala_cocok', []),
                 ],
             ];
         })->values();

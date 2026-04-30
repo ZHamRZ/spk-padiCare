@@ -21,6 +21,7 @@
                 <thead class="table-light">
                     <tr>
                         <th>Kode</th>
+                        <th>Gambar</th>
                         <th>Nama Gejala</th>
                         <th>Terkait Penyakit</th>
                         <th class="text-end">Aksi</th>
@@ -30,6 +31,15 @@
                     @forelse($gejala as $item)
                     <tr>
                         <td><span class="badge text-bg-success">{{ $item->kode }}</span></td>
+                        <td>
+                            @if($item->gambar_url)
+                            <img src="{{ $item->gambar_url }}" alt="{{ $item->nama_gejala }}" style="width:56px;height:56px;object-fit:cover;border-radius:12px;">
+                            @else
+                            <div class="thumb-placeholder rounded-3" style="width:56px;height:56px;">
+                                <i class="bi bi-image"></i>
+                            </div>
+                            @endif
+                        </td>
                         <td>{{ $item->nama_gejala }}</td>
                         <td>{{ $item->penyakit_count }} penyakit</td>
                         <td class="text-end">
@@ -44,7 +54,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="text-center py-4 text-muted">Belum ada data gejala.</td>
+                        <td colspan="5" class="text-center py-4 text-muted">Belum ada data gejala.</td>
                     </tr>
                     @endforelse
                 </tbody>

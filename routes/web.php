@@ -27,6 +27,7 @@ Route::get('/', [UserDashboard::class, 'index'])->name('home');
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::post('/login/admin', [AuthController::class, 'adminLogin'])->name('login.admin.post');
 
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register'])->name('register.post');
@@ -36,11 +37,21 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
+Route::get('/logout', [AuthController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout.get');
+
 Route::middleware('auth')->group(function () {
     Route::get('/user/profile', [ProfileController::class, 'edit'])->name('user.profile.edit');
     Route::put('/user/profile', [ProfileController::class, 'update'])->name('user.profile.update');
     Route::get('/admin/profile', [ProfileController::class, 'edit'])->name('admin.profile.edit');
     Route::put('/admin/profile', [ProfileController::class, 'update'])->name('admin.profile.update');
+    Route::post('/email/verification-notification', [ProfileController::class, 'sendVerificationEmail'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
+    Route::get('/email/verify/{id}/{hash}', [ProfileController::class, 'verifyEmail'])
+        ->middleware('signed')
+        ->name('verification.verify');
 });
 
 
@@ -52,11 +63,13 @@ Route::prefix('user')
         Route::get('/dashboard', [UserDashboard::class, 'index'])->name('dashboard');
 
         Route::get('/diagnosis', [DiagnosisController::class, 'index'])->name('diagnosis.index');
+        Route::get('/diagnosis/identifikasi', [DiagnosisController::class, 'hasilIdentifikasi'])->name('diagnosis.hasil');
         Route::post('/diagnosis/identifikasi', [DiagnosisController::class, 'identifikasi'])->name('diagnosis.identifikasi');
         Route::post('/diagnosis/proses', [DiagnosisController::class, 'proses'])->name('diagnosis.proses');
 
         Route::get('/rekomendasi/preview', [RekomendasiController::class, 'preview'])->name('rekomendasi.preview');
         Route::get('/rekomendasi/preview/detail', [RekomendasiController::class, 'previewDetail'])->name('rekomendasi.preview.detail');
+        Route::get('/rekomendasi/preview/cetak', [RekomendasiController::class, 'previewCetak'])->name('rekomendasi.preview.cetak');
 
         Route::middleware(['auth', 'role:petani'])->group(function () {
             Route::get('/rekomendasi/{id}', [RekomendasiController::class, 'show'])->name('rekomendasi.show');

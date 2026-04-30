@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'SPK Pupuk & Pestisida') - Desa Paok Lombok</title>
+    <title>@yield('title', 'PadiCare Lombok') - Sistem Pakar Penyakit & Rekomendasi Pupuk Padi</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
@@ -37,6 +37,21 @@
         .sidebar-brand {
             padding: 1.2rem 1rem;
             border-bottom: 1px solid rgba(255, 255, 255, .15);
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand-lockup {
+            display: flex;
+            align-items: center;
+            gap: .8rem;
+        }
+
+        .sidebar-brand-badge {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
+            box-shadow: 0 10px 20px rgba(5, 150, 105, .28);
             flex-shrink: 0;
         }
 
@@ -172,6 +187,45 @@
             color: #fff;
         }
 
+        .global-back-button {
+            position: fixed;
+            top: 5.25rem;
+            left: calc(260px + 1rem);
+            width: 58px;
+            height: 58px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 22px;
+            text-decoration: none;
+            background: rgba(255, 255, 255, .97);
+            color: var(--spk-dark);
+            border: 1px solid rgba(20, 83, 45, .18);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, .16);
+            z-index: 1100;
+            transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+        }
+
+        .global-back-button:hover {
+            color: var(--spk-dark);
+            background: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 22px 44px rgba(15, 23, 42, .20);
+        }
+
+        .global-back-button i {
+            font-size: 1.6rem;
+            line-height: 1;
+        }
+
+        .thumb-placeholder {
+            background: #f8fafc;
+            color: #94a3b8;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .badge-rank-1 {
             background: #f5a623;
             color: #fff;
@@ -199,11 +253,17 @@
             .main-content {
                 margin-left: 0;
             }
+
+            .global-back-button {
+                top: 5rem;
+                left: 1rem;
+            }
         }
 
         @media print {
             .sidebar,
             .topbar,
+            .global-back-button,
             .btn,
             .no-print {
                 display: none !important;
@@ -217,13 +277,23 @@
     @stack('styles')
 </head>
 
-<body>
+<body class="{{ auth()->check() ? 'authenticated-layout' : 'guest-layout' }}">
+    @php
+        $fallbackBackUrl = auth()->check()
+            ? (auth()->user()->isAdmin() ? route('admin.dashboard') : route('user.dashboard'))
+            : route('home');
+        $globalBackUrl = url()->previous() !== url()->current() ? url()->previous() : $fallbackBackUrl;
+    @endphp
     @auth
     <div class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <h6><i class="bi bi-leaf-fill me-1"></i> SPK Pertanian</h6>
-            <h5>Pupuk & Pestisida</h5>
-            <small style="color:rgba(255,255,255,.5);font-size:.75rem;">Desa Paok Lombok</small>
+            <div class="sidebar-brand-lockup">
+                <span class="sidebar-brand-badge"></span>
+                <div>
+                    <h5 style="margin:0; line-height:1.2;">PadiCare <span style="color:#4ade80;">Lombok</span></h5>
+                    <small style="color:rgba(255,255,255,.55);font-size:.75rem;">Sistem Pakar Penyakit & Rekomendasi Pupuk Padi</small>
+                </div>
+            </div>
         </div>
 
         <div class="sidebar-nav">
@@ -246,15 +316,15 @@
                 <a href="{{ route('admin.pestisida.index') }}" class="nav-link {{ request()->routeIs('admin.pestisida*') ? 'active' : '' }}">
                     <i class="bi bi-capsule"></i> Data Pestisida
                 </a>
-                <span class="nav-section">SAW</span>
+                <span class="nav-section">Analisis Sistem</span>
                 <a href="{{ route('admin.kriteria.index') }}" class="nav-link {{ request()->routeIs('admin.kriteria*') ? 'active' : '' }}">
-                    <i class="bi bi-sliders"></i> Kriteria & Bobot
+                    <i class="bi bi-sliders"></i> Parameter Prioritas
                 </a>
                 <a href="{{ route('admin.rating.pupuk') }}" class="nav-link {{ request()->routeIs('admin.rating.pupuk*') ? 'active' : '' }}">
-                    <i class="bi bi-table"></i> Rating Pupuk
+                    <i class="bi bi-table"></i> Rule CF Pupuk
                 </a>
                 <a href="{{ route('admin.rating.pestisida') }}" class="nav-link {{ request()->routeIs('admin.rating.pestisida*') ? 'active' : '' }}">
-                    <i class="bi bi-table"></i> Rating Pestisida
+                    <i class="bi bi-table"></i> Rule CF Pestisida
                 </a>
                 <span class="nav-section">Pengguna</span>
                 <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users*') ? 'active' : '' }}">
@@ -304,6 +374,11 @@
                     <i class="bi bi-box-arrow-left"></i> Logout
                 </button>
             </form>
+            <noscript>
+                <a href="{{ route('logout.get') }}" class="nav-link">
+                    <i class="bi bi-box-arrow-left"></i> Logout
+                </a>
+            </noscript>
         </div>
     </div>
 
@@ -340,7 +415,50 @@
     @yield('content')
     @endauth
 
+    <a href="{{ $globalBackUrl }}"
+        class="global-back-button"
+        aria-label="Kembali ke halaman sebelumnya"
+        title="Kembali"
+        data-fallback-url="{{ $fallbackBackUrl }}">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const backButton = document.querySelector('.global-back-button');
+
+            if (!backButton) return;
+
+            if (document.body.classList.contains('guest-layout')) {
+                backButton.style.top = '1rem';
+                backButton.style.left = '1rem';
+            }
+
+            backButton.addEventListener('click', (event) => {
+                const fallbackUrl = backButton.dataset.fallbackUrl;
+
+                try {
+                    const hasValidReferrer = document.referrer
+                        && document.referrer !== window.location.href
+                        && new URL(document.referrer).origin === window.location.origin;
+
+                    if (hasValidReferrer) {
+                        event.preventDefault();
+                        window.history.back();
+                        return;
+                    }
+                } catch (error) {
+                    // Ignore malformed referrer and continue to fallback URL.
+                }
+
+                if (!backButton.getAttribute('href')) {
+                    event.preventDefault();
+                    window.location.href = fallbackUrl;
+                }
+            });
+        });
+    </script>
     @stack('scripts')
 </body>
 

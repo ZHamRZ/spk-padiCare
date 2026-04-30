@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Pestisida;
 use App\Support\AutoCodeGenerator;
+use App\Support\ProjectImage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class PestisidaController extends Controller
 {
@@ -62,7 +62,7 @@ class PestisidaController extends Controller
             'satuan_harga'
         );
         if ($request->hasFile('gambar')) {
-            $data['gambar'] = $request->file('gambar')->store('pestisida', 'public');
+            $data['gambar'] = ProjectImage::store($request->file('gambar'), 'pestisida');
         }
         Pestisida::create($data);
         return redirect()->route('admin.pestisida.index')
@@ -110,10 +110,8 @@ class PestisidaController extends Controller
             'satuan_harga'
         );
         if ($request->hasFile('gambar')) {
-            if ($pestisida->gambar) {
-                Storage::disk('public')->delete($pestisida->gambar);
-            }
-            $data['gambar'] = $request->file('gambar')->store('pestisida', 'public');
+            ProjectImage::delete($pestisida->gambar);
+            $data['gambar'] = ProjectImage::store($request->file('gambar'), 'pestisida');
         }
         $pestisida->update($data);
         return redirect()->route('admin.pestisida.index')
@@ -123,7 +121,7 @@ class PestisidaController extends Controller
     public function destroy(Pestisida $pestisida)
     {
         if ($pestisida->gambar) {
-            Storage::disk('public')->delete($pestisida->gambar);
+            ProjectImage::delete($pestisida->gambar);
         }
         $pestisida->delete();
         return redirect()->route('admin.pestisida.index')

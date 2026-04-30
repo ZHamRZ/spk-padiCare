@@ -3,57 +3,75 @@
 @section('title', 'Detail Riwayat')
 @section('page-title', 'Detail Riwayat')
 
+@push('styles')
+<style>
+    .summary-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="row g-4">
     <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header">Informasi Rekomendasi</div>
-            <div class="card-body">
-                <p class="mb-2"><strong>Pengguna:</strong> {{ $rekomendasi->user->nama ?? '-' }}</p>
-                <p class="mb-2"><strong>Username:</strong> {{ $rekomendasi->user->username ?? '-' }}</p>
-                <p class="mb-2"><strong>Penyakit:</strong> {{ $rekomendasi->penyakit->nama ?? '-' }}</p>
-                <p class="mb-0"><strong>Tanggal:</strong> {{ optional($rekomendasi->created_at)->format('d M Y H:i') }}</p>
-            </div>
+        <div class="summary-card p-4 h-100">
+            <div class="small text-muted mb-2">Informasi hasil</div>
+            <p class="mb-2"><strong>Pengguna:</strong> {{ $rekomendasi->user->nama ?? '-' }}</p>
+            <p class="mb-2"><strong>No. HP:</strong> {{ $rekomendasi->user->no_telp ?? '-' }}</p>
+            <p class="mb-2"><strong>Penyakit:</strong> {{ $rekomendasi->penyakit->nama ?? '-' }}</p>
+            <p class="mb-0"><strong>Tanggal:</strong> {{ optional($rekomendasi->created_at)->format('d M Y H:i') }}</p>
         </div>
     </div>
+
     <div class="col-lg-8">
         <div class="card mb-4">
-            <div class="card-header">Ranking Pupuk</div>
-            <div class="card-body p-0">
-                <table class="table table-striped mb-0">
-                    <thead><tr><th>Peringkat</th><th>Nama</th><th>Nilai Vi</th></tr></thead>
-                    <tbody>
-                        @foreach($rekomendasi->detailPupuk as $item)
-                        <tr>
-                            <td>{{ $item->peringkat }}</td>
-                            <td>{{ $item->pupuk->nama ?? '-' }}</td>
-                            <td>{{ number_format($item->nilai_vi, 6) }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+            <div class="card-header">Ringkasan Pupuk</div>
+            <div class="card-body">
+                <div class="row g-4">
+                    @foreach($rekomendasi->detailPupuk->sortBy('peringkat') as $item)
+                    <div class="col-xl-6">
+                        <x-expert-system.result-card
+                            type="Pupuk"
+                            :title="$item->pupuk->nama ?? '-'"
+                            :code="$item->pupuk->kode ?? null"
+                            :description="App\Support\ExpertSystemPresenter::shortDescription(optional($item->pupuk)->fungsi_utama, optional($item->pupuk)->efek_penggunaan)"
+                            :score="$item->nilai_vi"
+                            :rank="$item->peringkat"
+                            :image-url="optional($item->pupuk)->gambar_url"
+                            :badge="$rekomendasi->preferensi_label"
+                        />
+                    </div>
+                    @endforeach
+                </div>
             </div>
         </div>
-        <div class="card">
-            <div class="card-header">Ranking Pestisida</div>
-            <div class="card-body p-0">
-                <table class="table table-striped mb-0">
-                    <thead><tr><th>Peringkat</th><th>Nama</th><th>Nilai Vi</th></tr></thead>
-                    <tbody>
-                        @foreach($rekomendasi->detailPestisida as $item)
-                        <tr>
-                            <td>{{ $item->peringkat }}</td>
-                            <td>{{ $item->pestisida->nama ?? '-' }}</td>
-                            <td>{{ number_format($item->nilai_vi, 6) }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+
+        <div class="card mb-4">
+            <div class="card-header">Ringkasan Pestisida</div>
+            <div class="card-body">
+                <div class="row g-4">
+                    @foreach($rekomendasi->detailPestisida->sortBy('peringkat') as $item)
+                    <div class="col-xl-6">
+                        <x-expert-system.result-card
+                            type="Pestisida"
+                            :title="$item->pestisida->nama ?? '-'"
+                            :code="$item->pestisida->kode ?? null"
+                            :description="App\Support\ExpertSystemPresenter::shortDescription(optional($item->pestisida)->fungsi, optional($item->pestisida)->efek_penggunaan)"
+                            :score="$item->nilai_vi"
+                            :rank="$item->peringkat"
+                            :image-url="optional($item->pestisida)->gambar_url"
+                            :badge="$rekomendasi->preferensi_label"
+                        />
+                    </div>
+                    @endforeach
+                </div>
             </div>
         </div>
-        <div class="mt-3">
-            <a href="{{ route('admin.riwayat.detail', $rekomendasi->id) }}" class="btn btn-outline-success">Lihat Detail Perhitungan SAW</a>
-        </div>
+
+        <a href="{{ route('admin.riwayat.detail', $rekomendasi->id) }}" class="btn btn-outline-success">Lihat Detail Analisis</a>
     </div>
 </div>
 @endsection

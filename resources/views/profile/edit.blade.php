@@ -138,7 +138,20 @@
                 <div class="info-row">
                     <div>
                         <div class="small text-muted">Email</div>
-                        <div class="fw-semibold">{{ $user->email }}</div>
+                        <div class="fw-semibold">{{ $user->email ?: 'Belum diisi' }}</div>
+                        <div class="small mt-1">
+                            @if($user->hasVerifiedEmail())
+                            <span class="badge text-bg-success">Terverifikasi</span>
+                            @else
+                            <span class="badge text-bg-warning">Belum diverifikasi</span>
+                            @endif
+                        </div>
+                        @unless($user->hasVerifiedEmail())
+                        <form action="{{ route('verification.send') }}" method="POST" class="mt-2">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-success">Kirim Email Verifikasi</button>
+                        </form>
+                        @endunless
                     </div>
                     <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#edit-email">Edit</button>
                 </div>

@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Pupuk;
 use App\Support\AutoCodeGenerator;
+use App\Support\ProjectImage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class PupukController extends Controller
 {
@@ -58,7 +58,7 @@ class PupukController extends Controller
             'satuan'
         );
         if ($request->hasFile('gambar')) {
-            $data['gambar'] = $request->file('gambar')->store('pupuk', 'public');
+            $data['gambar'] = ProjectImage::store($request->file('gambar'), 'pupuk');
         }
         Pupuk::create($data);
         return redirect()->route('admin.pupuk.index')
@@ -102,10 +102,8 @@ class PupukController extends Controller
             'satuan'
         );
         if ($request->hasFile('gambar')) {
-            if ($pupuk->gambar) {
-                Storage::disk('public')->delete($pupuk->gambar);
-            }
-            $data['gambar'] = $request->file('gambar')->store('pupuk', 'public');
+            ProjectImage::delete($pupuk->gambar);
+            $data['gambar'] = ProjectImage::store($request->file('gambar'), 'pupuk');
         }
         $pupuk->update($data);
         return redirect()->route('admin.pupuk.index')
@@ -115,7 +113,7 @@ class PupukController extends Controller
     public function destroy(Pupuk $pupuk)
     {
         if ($pupuk->gambar) {
-            Storage::disk('public')->delete($pupuk->gambar);
+            ProjectImage::delete($pupuk->gambar);
         }
         $pupuk->delete();
         return redirect()->route('admin.pupuk.index')

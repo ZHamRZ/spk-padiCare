@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
+use App\Support\CfSchema;
+use App\Support\ProjectImage;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class Pupuk extends Model
 {
@@ -34,6 +35,38 @@ class Pupuk extends Model
         return $this->hasMany(DetailRekomendasiPupuk::class, 'id_pupuk');
     }
 
+    public function penyakit()
+    {
+        $relation = $this->belongsToMany(
+            Penyakit::class,
+            'penyakit_pupuk',
+            'id_pupuk',
+            'id_penyakit'
+        );
+
+        if (CfSchema::hasPupukRuleTable()) {
+            $relation->withPivot(['mb', 'md'])->withTimestamps();
+        }
+
+        return $relation;
+    }
+
+    public function gejala()
+    {
+        $relation = $this->belongsToMany(
+            Gejala::class,
+            'gejala_pupuk',
+            'id_pupuk',
+            'id_gejala'
+        );
+
+        if (CfSchema::hasPupukRuleTable()) {
+            $relation->withPivot(['mb', 'md'])->withTimestamps();
+        }
+
+        return $relation;
+    }
+
     public function getHargaFormattedAttribute(): string
     {
         return 'Rp ' . number_format($this->harga_per_kg, 0, ',', '.');
@@ -41,6 +74,6 @@ class Pupuk extends Model
 
     public function getGambarUrlAttribute(): ?string
     {
-        return $this->gambar ? Storage::url($this->gambar) : null;
+        return ProjectImage::url($this->gambar);
     }
 }

@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Support\ProjectImage;
+use Illuminate\Support\Facades\Schema;
 
 class Gejala extends Model
 {
     protected $table    = 'gejala';
-    protected $fillable = ['kode', 'nama_gejala'];
+    protected $fillable = ['kode', 'nama_gejala', 'gambar'];
 
     public function penyakit()
     {
@@ -17,5 +19,66 @@ class Gejala extends Model
             'id_gejala',
             'id_penyakit'
         );
+    }
+
+    public function pupuk()
+    {
+        $relation = $this->belongsToMany(
+            Pupuk::class,
+            'gejala_pupuk',
+            'id_gejala',
+            'id_pupuk'
+        );
+
+        if (Schema::hasTable('gejala_pupuk')) {
+            $relation->withPivot(['mb', 'md'])->withTimestamps();
+        }
+
+        return $relation;
+    }
+
+    public function pestisida()
+    {
+        $relation = $this->belongsToMany(
+            Pestisida::class,
+            'gejala_pestisida',
+            'id_gejala',
+            'id_pestisida'
+        );
+
+        if (Schema::hasTable('gejala_pestisida')) {
+            $relation->withPivot(['mb', 'md'])->withTimestamps();
+        }
+
+        return $relation;
+    }
+
+    public function getGambarUrlAttribute(): ?string
+    {
+        if (!self::supportsImages()) {
+            return null;
+        }
+
+        return ProjectImage::url($this->gambar);
+    }
+
+    public static function supportsImages(): bool
+    {
+        static $supportsImages;
+
+        if ($supportsImages === null) {
+            $supportsImages = Schema::hasColumn('gejala', 'gambar');
+        }
+
+        return $supportsImages;
+    }
+
+    public static function selectableColumns(array $columns = ['id', 'kode', 'nama_gejala']): array
+    {
+        if (self::supportsImages() && !in_array('gambar', $columns, true)) {
+            $columns[] = 'gambar';
+        }
+
+        return $columns;
     }
 }

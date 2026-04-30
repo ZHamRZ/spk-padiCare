@@ -32,23 +32,58 @@
                     @error('deskripsi')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12">
-                    <label class="form-label">Gejala Terkait</label>
-                    <div class="row g-2">
-                        @foreach($gejala as $item)
-                        <div class="col-md-4">
-                            <div class="form-check border rounded p-2">
-                                <input class="form-check-input" type="checkbox" name="gejala[]" value="{{ $item->id }}" id="gejala-{{ $item->id }}" {{ in_array($item->id, old('gejala', [])) ? 'checked' : '' }}>
-                                <label class="form-check-label" for="gejala-{{ $item->id }}">
-                                    <strong>{{ $item->kode }}</strong> - {{ $item->nama_gejala }}
-                                </label>
-                            </div>
-                        </div>
-                        @endforeach
+                    <label class="form-label">Rule Gejala Penyakit</label>
+                    @unless($cfReady ?? false)
+                    <div class="alert alert-warning">
+                        Kolom MB/MD untuk relasi gejala belum tersedia di database. Form ini tetap bisa dipakai untuk memilih gejala, tetapi nilai CF gejala baru aktif setelah migration dijalankan.
+                    </div>
+                    @endunless
+                    <div class="alert alert-info">
+                        Pilih gejala yang relevan, lalu isi <strong>MB</strong> dan <strong>MD</strong> dari pakar untuk setiap gejala pada penyakit ini.
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Gunakan</th>
+                                    <th>Gejala</th>
+                                    <th>MB</th>
+                                    <th>MD</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($gejala as $item)
+                                @php($selected = old("gejala_rules.{$item->id}.selected"))
+                                <tr>
+                                    <td class="text-center" style="width:90px;">
+                                        <input class="form-check-input" type="checkbox" value="1"
+                                            name="gejala_rules[{{ $item->id }}][selected]"
+                                            {{ $selected ? 'checked' : '' }}>
+                                    </td>
+                                    <td>
+                                        <strong>{{ $item->kode }}</strong><br>
+                                        <small class="text-muted">{{ $item->nama_gejala }}</small>
+                                    </td>
+                                    <td style="min-width:140px;">
+                                        <input type="number" step="0.001" min="0" max="1"
+                                            name="gejala_rules[{{ $item->id }}][mb]"
+                                            value="{{ old("gejala_rules.{$item->id}.mb", 0.700) }}"
+                                            class="form-control">
+                                    </td>
+                                    <td style="min-width:140px;">
+                                        <input type="number" step="0.001" min="0" max="1"
+                                            name="gejala_rules[{{ $item->id }}][md]"
+                                            value="{{ old("gejala_rules.{$item->id}.md", 0.100) }}"
+                                            class="form-control">
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
             <div class="d-flex gap-2 mt-4">
-                <a href="{{ route('admin.penyakit.index') }}" class="btn btn-outline-secondary">Kembali</a>
                 <button type="submit" class="btn btn-spk">Simpan</button>
             </div>
         </form>

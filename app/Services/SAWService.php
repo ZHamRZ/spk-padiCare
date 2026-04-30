@@ -6,10 +6,10 @@ use App\Models\DetailRekomendasiPestisida;
 use App\Models\DetailRekomendasiPupuk;
 use App\Models\Kriteria;
 use App\Models\Pestisida;
+use App\Models\Penyakit;
 use App\Models\Pupuk;
-use App\Models\RatingPestisida;
-use App\Models\RatingPupuk;
 use App\Models\Rekomendasi;
+use App\Support\CfSchema;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -18,14 +18,10 @@ class SAWService
 {
     public function hitung(int $idUser, int $idPenyakit, array $preferensi = []): Rekomendasi
     {
-        $kriteria = Kriteria::orderBy('kode')->get();
-        $kriteriaTerbobot = $this->buildWeightedCriteria($kriteria, $preferensi);
+        $preview = $this->preview($idPenyakit, $preferensi);
+        $preferensiSnapshot = $this->buildPreferenceSnapshot($preview['kriteria'], $preferensi);
 
-        $hasilPupuk = $this->hitungAlternatif('pupuk', $idPenyakit, $kriteriaTerbobot);
-        $hasilPestisida = $this->hitungAlternatif('pestisida', $idPenyakit, $kriteriaTerbobot);
-        $preferensiSnapshot = $this->buildPreferenceSnapshot($kriteriaTerbobot, $preferensi);
-
-        return DB::transaction(function () use ($idUser, $idPenyakit, $hasilPupuk, $hasilPestisida, $preferensiSnapshot) {
+        return DB::transaction(function () use ($idUser, $idPenyakit, $preview, $preferensiSnapshot) {
             $rekomendasi = Rekomendasi::create([
                 'id_user' => $idUser,
                 'id_penyakit' => $idPenyakit,
@@ -34,7 +30,7 @@ class SAWService
                 'preferensi_pengguna' => $preferensiSnapshot,
             ]);
 
-            foreach ($hasilPupuk as $item) {
+            foreach ($preview['pupuk'] as $item) {
                 DetailRekomendasiPupuk::create([
                     'id_rekomendasi' => $rekomendasi->id,
                     'id_pupuk' => $item['id'],
@@ -43,7 +39,7 @@ class SAWService
                 ]);
             }
 
-            foreach ($hasilPestisida as $item) {
+            foreach ($preview['pestisida'] as $item) {
                 DetailRekomendasiPestisida::create([
                     'id_rekomendasi' => $rekomendasi->id,
                     'id_pestisida' => $item['id'],
@@ -56,114 +52,78 @@ class SAWService
         });
     }
 
-    public function hitungAlternatif(string $jenis, int $idPenyakit, ?Collection $kriteria = null): array
+    public function preview(int $idPenyakit, array $preferensi = []): array
     {
-        $kriteria ??= $this->buildWeightedCriteria(Kriteria::orderBy('kode')->get());
+        $kriteria = $this->buildPreferenceCriteria(Kriteria::orderBy('kode')->get(), $preferensi);
 
-        if ($kriteria->isEmpty()) {
-            throw new RuntimeException('Data kriteria belum tersedia. Silakan isi kriteria dan bobot SAW terlebih dahulu.');
+        return [
+            'rumus' => [
+                'cf_rule' => 'CF = MB - MD',
+                'cf_combine' => 'CFcombine = CF1 + CF2 * (1 - CF1)',
+                'preferensi' => 'CF akhir = CF dasar + penyesuaian MB/MD berdasarkan preferensi pengguna',
+            ],
+            'kriteria' => $kriteria,
+            'pupuk' => $this->hitungAlternatif('pupuk', $idPenyakit, $kriteria, $preferensi),
+            'pestisida' => $this->hitungAlternatif('pestisida', $idPenyakit, $kriteria, $preferensi),
+        ];
+    }
+
+    public function hitungAlternatif(
+        string $jenis,
+        int $idPenyakit,
+        ?Collection $kriteria = null,
+        array $preferensi = []
+    ): array {
+        if (!CfSchema::isReady()) {
+            throw new RuntimeException('Struktur Certainty Factor belum lengkap. Jalankan migration dan lengkapi rule CF terlebih dahulu.');
         }
 
-        $alternatif = $jenis === 'pupuk' ? Pupuk::orderBy('kode')->get() : Pestisida::orderBy('kode')->get();
-        $ratings = $jenis === 'pupuk'
-            ? RatingPupuk::where('id_penyakit', $idPenyakit)->get()
-            : RatingPestisida::where('id_penyakit', $idPenyakit)->get();
+        $kriteria ??= $this->buildPreferenceCriteria(Kriteria::orderBy('kode')->get(), $preferensi);
+        $penyakit = Penyakit::with('gejala')->findOrFail($idPenyakit);
+        $matchedSymptoms = $this->resolveMatchedSymptoms($penyakit, $preferensi);
 
-        $idKolomAlternatif = $jenis === 'pupuk' ? 'id_pupuk' : 'id_pestisida';
-        $label = $jenis === 'pupuk' ? 'pupuk' : 'pestisida';
+        if ($matchedSymptoms->isEmpty()) {
+            throw new RuntimeException("Gejala yang cocok untuk penyakit terpilih belum tersedia, sehingga rekomendasi {$jenis} belum bisa dihitung.");
+        }
+
+        $alternatif = $this->loadAlternativesForSymptoms($jenis, $matchedSymptoms->pluck('id')->all());
 
         if ($alternatif->isEmpty()) {
-            throw new RuntimeException("Data alternatif {$label} belum tersedia.");
+            throw new RuntimeException("Aturan CF {$jenis} untuk gejala yang cocok belum diisi oleh pakar.");
         }
 
-        if ($ratings->isEmpty()) {
-            throw new RuntimeException("Rating {$label} untuk penyakit terpilih belum diisi di panel admin.");
-        }
+        $hasil = $alternatif->map(function ($item) use ($jenis, $kriteria, $preferensi, $matchedSymptoms) {
+            $matchedRules = $item->gejala
+                ->filter(fn ($gejala) => $matchedSymptoms->contains('id', $gejala->id))
+                ->values();
 
-        $matriks = [];
-        foreach ($alternatif as $item) {
-            foreach ($kriteria as $kriteriaItem) {
-                $rating = $ratings
-                    ->where($idKolomAlternatif, $item->id)
-                    ->where('id_kriteria', $kriteriaItem['id'])
-                    ->first();
-
-                if (!$rating) {
-                    throw new RuntimeException(
-                        "Rating {$label} untuk alternatif {$item->nama} pada kriteria {$kriteriaItem['kode']} belum lengkap."
-                    );
-                }
-
-                $matriks[$item->id][$kriteriaItem['id']] = (float) $rating->nilai;
-            }
-        }
-
-        $normalisasi = [];
-        $statistik = [];
-
-        foreach ($kriteria as $kriteriaItem) {
-            $nilaiKolom = [];
-            foreach ($alternatif as $item) {
-                $nilaiKolom[$item->id] = $matriks[$item->id][$kriteriaItem['id']] ?? 0;
+            if ($matchedRules->isEmpty()) {
+                return null;
             }
 
-            $statistik[$kriteriaItem['id']] = [
-                'max' => max($nilaiKolom),
-                'min' => min($nilaiKolom),
-            ];
+            [$baseMb, $baseMd, $baseCf, $baseDetail, $matchedSymptomMeta] = $this->combineSymptomRules($matchedRules);
 
-            foreach ($alternatif as $item) {
-                $xij = $nilaiKolom[$item->id];
+            [$finalMb, $finalMd, $detail] = $this->applyPreferenceRules(
+                item: $item,
+                type: $jenis,
+                baseMb: $baseMb,
+                baseMd: $baseMd,
+                baseCf: $baseCf,
+                preferensi: $preferensi,
+                kriteria: $kriteria,
+                baseDetail: $baseDetail
+            );
 
-                if ($kriteriaItem['jenis'] === 'benefit') {
-                    $normalisasi[$item->id][$kriteriaItem['id']] = $statistik[$kriteriaItem['id']]['max'] > 0
-                        ? round($xij / $statistik[$kriteriaItem['id']]['max'], 6)
-                        : 0;
-                } else {
-                    $normalisasi[$item->id][$kriteriaItem['id']] = $xij > 0
-                        ? round($statistik[$kriteriaItem['id']]['min'] / $xij, 6)
-                        : 0;
-                }
-            }
-        }
+            $finalCf = $this->calculateCf($finalMb, $finalMd);
 
-        $hasil = [];
-        foreach ($alternatif as $item) {
-            $nilaiPreferensi = 0;
-            $detail = [];
-
-            foreach ($kriteria as $kriteriaItem) {
-                $xij = $matriks[$item->id][$kriteriaItem['id']] ?? 0;
-                $rij = $normalisasi[$item->id][$kriteriaItem['id']] ?? 0;
-                $wj = (float) $kriteriaItem['bobot_final'];
-                $kontribusi = round($wj * $rij, 6);
-                $nilaiPreferensi += $kontribusi;
-
-                $detail[$kriteriaItem['kode']] = [
-                    'kriteria' => $kriteriaItem['nama'],
-                    'jenis' => $kriteriaItem['jenis'],
-                    'xij' => $xij,
-                    'min' => $statistik[$kriteriaItem['id']]['min'],
-                    'max' => $statistik[$kriteriaItem['id']]['max'],
-                    'formula_normalisasi' => $kriteriaItem['jenis'] === 'benefit'
-                        ? "rij = xij / max(xij) = {$xij} / {$statistik[$kriteriaItem['id']]['max']}"
-                        : "rij = min(xij) / xij = {$statistik[$kriteriaItem['id']]['min']} / {$xij}",
-                    'bobot_awal' => $kriteriaItem['bobot_awal'],
-                    'preferensi_user' => $kriteriaItem['preferensi_user'],
-                    'bobot_final' => $kriteriaItem['bobot_final'],
-                    'rij' => $rij,
-                    'wj' => $wj,
-                    'wj_rij' => $kontribusi,
-                ];
-            }
-
-            $hasil[] = [
+            return [
                 'id' => $item->id,
                 'kode' => $item->kode,
                 'nama' => $item->nama,
-                'vi' => round($nilaiPreferensi, 6),
+                'vi' => $finalCf,
                 'meta' => [
-                    'kandungan' => $jenis === 'pupuk' ? $item->kandungan : null,
+                    'gambar_url' => method_exists($item, 'getGambarUrlAttribute') ? $item->gambar_url : null,
+                    'kandungan' => $jenis === 'pupuk' ? ($item->kandungan ?? null) : null,
                     'kandungan_detail' => $item->kandungan_detail ?? null,
                     'bahan_aktif' => $jenis === 'pestisida' ? ($item->bahan_aktif ?? null) : null,
                     'fungsi_utama' => $jenis === 'pupuk' ? ($item->fungsi_utama ?? null) : null,
@@ -174,12 +134,19 @@ class SAWService
                     'cara_aplikasi' => $item->cara_aplikasi ?? null,
                     'jadwal_umur_aplikasi' => $item->jadwal_umur_aplikasi ?? null,
                     'frekuensi_aplikasi' => $item->frekuensi_aplikasi ?? null,
+                    'gejala_cocok' => $matchedSymptomMeta,
                 ],
                 'detail' => $detail,
+                'cf_meta' => [
+                    'mb_awal' => $baseMb,
+                    'md_awal' => $baseMd,
+                    'cf_awal' => $baseCf,
+                    'mb_akhir' => $finalMb,
+                    'md_akhir' => $finalMd,
+                    'cf_akhir' => $finalCf,
+                ],
             ];
-        }
-
-        usort($hasil, fn($a, $b) => $b['vi'] <=> $a['vi']);
+        })->filter()->sortByDesc('vi')->values()->all();
 
         foreach ($hasil as $index => &$item) {
             $item['peringkat'] = $index + 1;
@@ -188,63 +155,257 @@ class SAWService
         return $hasil;
     }
 
-    public function preview(int $idPenyakit, array $preferensi = []): array
-    {
-        $kriteria = $this->buildWeightedCriteria(Kriteria::orderBy('kode')->get(), $preferensi);
-
-        return [
-            'rumus' => [
-                'benefit' => 'rij = xij / max(xij)',
-                'cost' => 'rij = min(xij) / xij',
-                'preferensi' => 'Vi = Σ(wj * rij)',
-                'bobot_preferensi' => 'w_final = (w_awal * prioritas_pengguna) / Σ(w_awal * prioritas_pengguna)',
-            ],
-            'kriteria' => $kriteria,
-            'pupuk' => $this->hitungAlternatif('pupuk', $idPenyakit, $kriteria),
-            'pestisida' => $this->hitungAlternatif('pestisida', $idPenyakit, $kriteria),
-        ];
-    }
-
     public function getPreferencePresets(): array
     {
         return [
             'seimbang' => [
                 'label' => 'Seimbang',
-                'description' => 'Menjaga keseimbangan antara efektivitas, biaya, dan dampak lainnya.',
-                'default_score' => 3,
-            ],
-            'efektif' => [
-                'label' => 'Efektivitas Maksimal',
-                'description' => 'Cocok bila Anda ingin penanganan paling efektif walaupun biaya lebih tinggi.',
-                'default_score' => 4,
+                'description' => 'Memberi penyesuaian ringan dan merata agar rekomendasi tetap stabil.',
             ],
             'hemat' => [
                 'label' => 'Hemat Biaya',
-                'description' => 'Cocok bila Anda ingin pengendalian penyakit tetap berjalan dengan biaya serendah mungkin.',
-                'default_score' => 4,
+                'description' => 'Meningkatkan keyakinan pada alternatif yang lebih hemat dan menekan alternatif mahal.',
             ],
-            'aman' => [
-                'label' => 'Aman dan Terkontrol',
-                'description' => 'Memprioritaskan opsi yang lebih aman dan terkendali untuk penggunaan lapangan.',
-                'default_score' => 4,
+            'efisiensi' => [
+                'label' => 'Efisiensi Tinggi',
+                'description' => 'Mendorong alternatif yang paling kuat berdasarkan keyakinan dasar pakar.',
             ],
             'custom' => [
                 'label' => 'Atur Sendiri',
-                'description' => 'Sesuaikan prioritas setiap kriteria berdasarkan kebutuhan Anda.',
-                'default_score' => 3,
+                'description' => 'Preferensi ini akan mempengaruhi rekomendasi berdasarkan pengetahuan pakar.',
             ],
         ];
     }
 
-    private function buildWeightedCriteria(Collection $kriteria, array $preferensi = []): Collection
+    public function calculateCf(float $mb, float $md): float
     {
-        $preset = $preferensi['preset'] ?? 'seimbang';
-        $skorKustom = $this->normalizeCriteriaPreferenceScores($preferensi['kriteria'] ?? []);
+        return round(max(0, min(1, $mb - $md)), 6);
+    }
 
-        $weighted = $kriteria->map(function ($item) use ($preset, $skorKustom) {
-            $prioritas = isset($skorKustom[$item->id])
-                ? max(1, min(5, (int) $skorKustom[$item->id]))
-                : $this->resolvePresetPriority($item, $preset);
+    public function combineCf(float $cf1, float $cf2): float
+    {
+        return round($cf1 + ($cf2 * (1 - $cf1)), 6);
+    }
+
+    public function applyPreferenceRules(
+        object $item,
+        string $type,
+        float $baseMb,
+        float $baseMd,
+        float $baseCf,
+        array $preferensi,
+        Collection $kriteria,
+        array $baseDetail = []
+    ): array {
+        $preset = $this->normalizePreset($preferensi['preset'] ?? 'seimbang');
+        $harga = $type === 'pupuk'
+            ? (float) ($item->harga_per_kg ?? 0)
+            : (float) ($item->harga ?? 0);
+
+        $finalMb = $baseMb;
+        $finalMd = $baseMd;
+        $detail = $baseDetail + [
+            'BASE' => [
+                'kriteria' => 'Akumulasi keyakinan dasar pakar',
+                'jenis' => 'base',
+                'preferensi_user' => null,
+                'signal' => 1,
+                'mb_bonus' => 0,
+                'md_bonus' => 0,
+                'impact' => $baseCf,
+                'mb_awal' => $baseMb,
+                'md_awal' => $baseMd,
+                'cf' => $baseCf,
+                'catatan' => 'Nilai awal dibentuk dari gabungan semua rule gejala yang cocok dengan alternatif ini.',
+            ],
+        ];
+
+        if ($preset === 'hemat') {
+            $bonus = $this->resolvePriceBonus($harga);
+            $penalty = $this->resolvePricePenalty($harga);
+            $finalMb += $bonus;
+            $finalMd += $penalty;
+            $detail['PRESET'] = [
+                'kriteria' => 'Preset hemat biaya',
+                'jenis' => 'preset',
+                'preferensi_user' => 100,
+                'signal' => round(max(0, 1 - $penalty + $bonus), 3),
+                'mb_bonus' => $bonus,
+                'md_bonus' => $penalty,
+                'impact' => round($bonus - $penalty, 6),
+                'cf' => null,
+                'catatan' => 'Alternatif murah diperkuat, alternatif mahal ditekan.',
+            ];
+        }
+
+        if ($preset === 'efisiensi') {
+            $bonus = $baseCf >= 0.8 ? 0.12 : ($baseCf >= 0.6 ? 0.08 : 0.04);
+            $finalMb += $bonus;
+            $detail['PRESET'] = [
+                'kriteria' => 'Preset efisiensi tinggi',
+                'jenis' => 'preset',
+                'preferensi_user' => 100,
+                'signal' => $baseCf,
+                'mb_bonus' => $bonus,
+                'md_bonus' => 0,
+                'impact' => round($bonus, 6),
+                'cf' => null,
+                'catatan' => 'Alternatif dengan keyakinan dasar pakar lebih tinggi diperkuat.',
+            ];
+        }
+
+        if ($preset === 'seimbang') {
+            $finalMb += 0.03;
+            $finalMd = max(0, $finalMd - 0.01);
+            $detail['PRESET'] = [
+                'kriteria' => 'Preset seimbang',
+                'jenis' => 'preset',
+                'preferensi_user' => 60,
+                'signal' => 0.6,
+                'mb_bonus' => 0.03,
+                'md_bonus' => -0.01,
+                'impact' => 0.04,
+                'cf' => null,
+                'catatan' => 'Semua alternatif mendapat penyesuaian moderat dan stabil.',
+            ];
+        }
+
+        foreach ($kriteria as $kriteriaItem) {
+            $preferensiUser = (int) ($kriteriaItem['preferensi_user'] ?? 0);
+            $intensity = round($preferensiUser / 100, 4);
+            $signal = $this->resolvePreferenceSignal($kriteriaItem, $item, $type, $baseCf, $harga);
+
+            $mbBonus = round($signal * 0.10 * $intensity, 6);
+            $mdBonus = round((1 - $signal) * 0.06 * $intensity, 6);
+
+            $finalMb += $mbBonus;
+            $finalMd += $mdBonus;
+
+            $detail[$kriteriaItem['kode']] = [
+                'kriteria' => $kriteriaItem['nama'],
+                'jenis' => $kriteriaItem['jenis'],
+                'preferensi_user' => $preferensiUser,
+                'signal' => $signal,
+                'mb_bonus' => $mbBonus,
+                'md_bonus' => $mdBonus,
+                'impact' => round($mbBonus - $mdBonus, 6),
+                'cf' => null,
+                'catatan' => $this->resolvePreferenceRuleNote($kriteriaItem),
+            ];
+        }
+
+        $finalMb = round(min(1, max(0, $finalMb)), 6);
+        $finalMd = round(min(1, max(0, $finalMd)), 6);
+
+        return [$finalMb, $finalMd, $detail];
+    }
+
+    private function resolveMatchedSymptoms(Penyakit $penyakit, array $preferensi): Collection
+    {
+        $selectedIds = $this->resolveSelectedSymptomIds($preferensi);
+        $diseaseSymptoms = $penyakit->gejala
+            ->sortBy('kode')
+            ->values();
+
+        if ($selectedIds === []) {
+            return $diseaseSymptoms;
+        }
+
+        return $diseaseSymptoms
+            ->filter(fn ($gejala) => in_array((int) $gejala->id, $selectedIds, true))
+            ->values();
+    }
+
+    private function resolveSelectedSymptomIds(array $preferensi): array
+    {
+        return collect($preferensi['gejala_terpilih'] ?? [])
+            ->map(function ($gejala) {
+                if (is_array($gejala)) {
+                    return (int) ($gejala['id'] ?? 0);
+                }
+
+                if (is_object($gejala)) {
+                    return (int) ($gejala->id ?? 0);
+                }
+
+                return (int) $gejala;
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function loadAlternativesForSymptoms(string $jenis, array $matchedSymptomIds): Collection
+    {
+        $model = $jenis === 'pupuk' ? Pupuk::class : Pestisida::class;
+
+        return $model::query()
+            ->with(['gejala' => fn ($query) => $query
+                ->whereIn('gejala.id', $matchedSymptomIds)
+                ->orderBy('gejala.kode')])
+            ->whereHas('gejala', fn ($query) => $query->whereIn('gejala.id', $matchedSymptomIds))
+            ->orderBy('kode')
+            ->get();
+    }
+
+    private function combineSymptomRules(Collection $matchedRules): array
+    {
+        $combinedMb = 0.0;
+        $combinedMd = 0.0;
+        $detail = [];
+
+        foreach ($matchedRules as $index => $gejala) {
+            $mb = round((float) ($gejala->pivot->mb ?? 0), 6);
+            $md = round((float) ($gejala->pivot->md ?? 0), 6);
+            $cf = $this->calculateCf($mb, $md);
+
+            if ($index === 0) {
+                $combinedMb = $mb;
+                $combinedMd = $md;
+            } else {
+                $combinedMb = $this->combineCf($combinedMb, $mb);
+                $combinedMd = $this->combineCf($combinedMd, $md);
+            }
+
+            $detail['GEJALA_' . $gejala->id] = [
+                'kriteria' => ($gejala->kode ? $gejala->kode . ' - ' : '') . $gejala->nama_gejala,
+                'jenis' => 'gejala',
+                'preferensi_user' => null,
+                'signal' => $cf,
+                'mb_bonus' => $mb,
+                'md_bonus' => $md,
+                'impact' => $cf,
+                'cf' => $cf,
+                'catatan' => 'Rule pakar langsung antara gejala dan alternatif ini.',
+            ];
+        }
+
+        $baseCf = $this->calculateCf($combinedMb, $combinedMd);
+        $matchedSymptomMeta = $matchedRules
+            ->map(fn ($gejala) => [
+                'id' => $gejala->id,
+                'kode' => $gejala->kode,
+                'nama_gejala' => $gejala->nama_gejala,
+                'gambar_url' => $gejala->gambar_url,
+                'mb' => round((float) ($gejala->pivot->mb ?? 0), 3),
+                'md' => round((float) ($gejala->pivot->md ?? 0), 3),
+            ])
+            ->values()
+            ->all();
+
+        return [$combinedMb, $combinedMd, $baseCf, $detail, $matchedSymptomMeta];
+    }
+
+    private function buildPreferenceCriteria(Collection $kriteria, array $preferensi = []): Collection
+    {
+        $preset = $this->normalizePreset($preferensi['preset'] ?? 'seimbang');
+        $customScores = $this->normalizeCriteriaPreferenceScores($preferensi['kriteria'] ?? []);
+
+        return $kriteria->map(function ($item) use ($preset, $customScores) {
+            $preferensiUser = array_key_exists($item->id, $customScores)
+                ? $customScores[$item->id]
+                : $this->resolvePresetInfluence($item, $preset);
 
             return [
                 'id' => $item->id,
@@ -253,20 +414,10 @@ class SAWService
                 'jenis' => $item->jenis,
                 'keterangan' => $item->keterangan,
                 'bobot_awal' => (float) $item->bobot,
-                'preferensi_user' => $prioritas,
-                'bobot_final_raw' => (float) $item->bobot * $prioritas,
+                'preferensi_user' => $preferensiUser,
+                'ui_label' => $this->resolvePreferenceLabel($item),
+                'ui_icon' => $this->resolvePreferenceIcon($item),
             ];
-        });
-
-        $totalRaw = $weighted->sum('bobot_final_raw');
-
-        if ($totalRaw <= 0) {
-            throw new RuntimeException('Bobot kriteria tidak valid. Pastikan data kriteria telah diisi dengan benar.');
-        }
-
-        return $weighted->map(function ($item) use ($totalRaw) {
-            $item['bobot_final'] = round($item['bobot_final_raw'] / $totalRaw, 6);
-            return $item;
         })->values();
     }
 
@@ -275,68 +426,128 @@ class SAWService
         $normalized = [];
 
         foreach ($scores as $key => $value) {
-            if (is_array($value) && isset($value['id'], $value['preferensi_user'])) {
-                $normalized[(int) $value['id']] = (int) $value['preferensi_user'];
-                continue;
+            $rawValue = is_array($value) ? ($value['preferensi_user'] ?? ($value['value'] ?? 0)) : $value;
+            $numeric = (int) $rawValue;
+
+            if ($numeric <= 5) {
+                $numeric *= 20;
             }
 
-            $normalized[(int) $key] = (int) $value;
+            $normalized[(int) $key] = max(0, min(100, $numeric));
         }
 
         return $normalized;
     }
 
-    private function resolvePresetPriority(object $kriteria, string $preset): int
+    private function normalizePreset(string $preset): string
     {
-        $nama = strtolower($kriteria->nama . ' ' . ($kriteria->keterangan ?? ''));
-
         return match ($preset) {
-            'efektif' => $this->matchKeywordPriority($kriteria->jenis, $nama, [
-                'harga' => 2,
-                'biaya' => 2,
-                'murah' => 2,
-                'efektif' => 5,
-                'hasil' => 5,
-                'manfaat' => 5,
-                'kualitas' => 5,
-                'cepat' => 4,
-            ], 4),
-            'hemat' => $this->matchKeywordPriority($kriteria->jenis, $nama, [
-                'harga' => 5,
-                'biaya' => 5,
-                'murah' => 5,
-                'efektif' => 3,
-                'hasil' => 3,
-                'kualitas' => 3,
-            ], $kriteria->jenis === 'cost' ? 5 : 3),
-            'aman' => $this->matchKeywordPriority($kriteria->jenis, $nama, [
-                'aman' => 5,
-                'residu' => 5,
-                'dampak' => 5,
-                'risiko' => 5,
-                'harga' => 3,
-                'biaya' => 3,
-            ], 4),
-            'custom' => 3,
-            default => 3,
+            'efektif' => 'efisiensi',
+            'aman' => 'custom',
+            default => $preset,
         };
     }
 
-    private function matchKeywordPriority(string $jenis, string $nama, array $map, int $default): int
+    private function resolvePresetInfluence(object $kriteria, string $preset): int
     {
-        foreach ($map as $keyword => $priority) {
-            if (str_contains($nama, $keyword)) {
-                return $priority;
-            }
+        $label = $this->resolvePreferenceLabel($kriteria);
+
+        return match ($preset) {
+            'hemat' => $label === 'Murah' ? 90 : 45,
+            'efisiensi' => $label === 'Efektif' ? 90 : ($label === 'Aman' ? 70 : 50),
+            'custom' => 60,
+            default => 60,
+        };
+    }
+
+    private function resolvePreferenceLabel(object|array $kriteria): string
+    {
+        $nama = strtolower(data_get($kriteria, 'nama', '') . ' ' . data_get($kriteria, 'keterangan', ''));
+
+        if (str_contains($nama, 'harga') || str_contains($nama, 'biaya') || str_contains($nama, 'murah')) {
+            return 'Murah';
         }
 
-        return $jenis === 'cost' && $default < 3 ? 3 : $default;
+        if (
+            str_contains($nama, 'efektif')
+            || str_contains($nama, 'hasil')
+            || str_contains($nama, 'manfaat')
+            || str_contains($nama, 'kualitas')
+        ) {
+            return 'Efektif';
+        }
+
+        if (
+            str_contains($nama, 'aman')
+            || str_contains($nama, 'dampak')
+            || str_contains($nama, 'residu')
+            || str_contains($nama, 'risiko')
+        ) {
+            return 'Aman';
+        }
+
+        return data_get($kriteria, 'nama', 'Kriteria');
+    }
+
+    private function resolvePreferenceIcon(object|array $kriteria): string
+    {
+        return match ($this->resolvePreferenceLabel($kriteria)) {
+            'Murah' => '💰',
+            'Efektif' => '⚡',
+            'Aman' => '🌱',
+            default => '🎯',
+        };
+    }
+
+    private function resolvePreferenceSignal(
+        array $kriteriaItem,
+        object $item,
+        string $type,
+        float $baseCf,
+        float $harga
+    ): float {
+        $label = $this->resolvePreferenceLabel($kriteriaItem);
+
+        return match ($label) {
+            'Murah' => $harga <= 0 ? 0.5 : ($harga <= 50000 ? 1.0 : ($harga <= 100000 ? 0.7 : 0.25)),
+            'Efektif' => round(max(0.1, min(1, $baseCf)), 4),
+            'Aman' => 0.65,
+            default => 0.5,
+        };
+    }
+
+    private function resolvePreferenceRuleNote(array $kriteriaItem): string
+    {
+        return match ($this->resolvePreferenceLabel($kriteriaItem)) {
+            'Murah' => 'Preferensi ini memperkuat alternatif yang lebih hemat biaya.',
+            'Efektif' => 'Preferensi ini memperkuat alternatif yang punya keyakinan dasar pakar lebih tinggi.',
+            'Aman' => 'Preferensi ini mendorong alternatif yang lebih aman dan terkendali.',
+            default => 'Preferensi ini memberi penyesuaian tambahan pada nilai keyakinan.',
+        };
+    }
+
+    private function resolvePriceBonus(float $harga): float
+    {
+        if ($harga <= 0) {
+            return 0.02;
+        }
+
+        return $harga <= 50000 ? 0.12 : ($harga <= 100000 ? 0.07 : 0.02);
+    }
+
+    private function resolvePricePenalty(float $harga): float
+    {
+        if ($harga <= 0) {
+            return 0;
+        }
+
+        return $harga > 100000 ? 0.06 : ($harga > 50000 ? 0.03 : 0);
     }
 
     private function buildPreferenceSnapshot(Collection $kriteria, array $preferensi = []): array
     {
         $presets = $this->getPreferencePresets();
-        $presetKey = $preferensi['preset'] ?? 'seimbang';
+        $presetKey = $this->normalizePreset($preferensi['preset'] ?? 'seimbang');
 
         return [
             'preset' => $presetKey,
@@ -344,14 +555,14 @@ class SAWService
             'alasan' => $preferensi['alasan'] ?? null,
             'catatan' => $preferensi['catatan'] ?? null,
             'gejala_terpilih' => $preferensi['gejala_terpilih'] ?? [],
-            'kriteria' => $kriteria->map(fn($item) => [
+            'kriteria' => $kriteria->map(fn ($item) => [
                 'id' => $item['id'],
                 'kode' => $item['kode'],
                 'nama' => $item['nama'],
                 'jenis' => $item['jenis'],
-                'bobot_awal' => $item['bobot_awal'],
                 'preferensi_user' => $item['preferensi_user'],
-                'bobot_final' => $item['bobot_final'],
+                'ui_label' => $item['ui_label'],
+                'ui_icon' => $item['ui_icon'],
             ])->values()->all(),
         ];
     }

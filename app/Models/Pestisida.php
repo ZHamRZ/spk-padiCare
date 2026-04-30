@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
+use App\Support\CfSchema;
+use App\Support\ProjectImage;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class Pestisida extends Model
 {
@@ -36,6 +37,38 @@ class Pestisida extends Model
         return $this->hasMany(DetailRekomendasiPestisida::class, 'id_pestisida');
     }
 
+    public function penyakit()
+    {
+        $relation = $this->belongsToMany(
+            Penyakit::class,
+            'penyakit_pestisida',
+            'id_pestisida',
+            'id_penyakit'
+        );
+
+        if (CfSchema::hasPestisidaRuleTable()) {
+            $relation->withPivot(['mb', 'md'])->withTimestamps();
+        }
+
+        return $relation;
+    }
+
+    public function gejala()
+    {
+        $relation = $this->belongsToMany(
+            Gejala::class,
+            'gejala_pestisida',
+            'id_pestisida',
+            'id_gejala'
+        );
+
+        if (CfSchema::hasPestisidaRuleTable()) {
+            $relation->withPivot(['mb', 'md'])->withTimestamps();
+        }
+
+        return $relation;
+    }
+
     public function getHargaFormattedAttribute(): string
     {
         return 'Rp ' . number_format($this->harga, 0, ',', '.');
@@ -54,6 +87,6 @@ class Pestisida extends Model
 
     public function getGambarUrlAttribute(): ?string
     {
-        return $this->gambar ? Storage::url($this->gambar) : null;
+        return ProjectImage::url($this->gambar);
     }
 }

@@ -12,9 +12,14 @@
                     <i class="bi bi-leaf-fill text-white fs-4"></i>
                 </div>
                 <h5 class="fw-bold mb-0">SPK Pupuk & Pestisida</h5>
-                <small class="text-muted">Desa Paok Lombok - Metode SAW</small>
+                <small class="text-muted">Login petani dengan username dan password</small>
             </div>
 
+            @if(session('success'))
+            <div class="alert alert-success py-2">
+                <i class="bi bi-check-circle me-1"></i>{{ session('success') }}
+            </div>
+            @endif
             @if(session('error'))
             <div class="alert alert-danger py-2">
                 <i class="bi bi-exclamation-circle me-1"></i>{{ session('error') }}
@@ -46,14 +51,24 @@
                         @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" name="remember" id="remember">
-                    <label class="form-check-label" for="remember">Ingat saya</label>
-                </div>
                 <button type="submit" class="btn btn-spk w-100 py-2 fw-semibold">
                     <i class="bi bi-box-arrow-in-right me-1"></i> Login
                 </button>
             </form>
+            <hr>
+            <div class="mb-3">
+                <div class="small text-muted mb-2">Admin tetap login dengan username dan password:</div>
+                <form action="{{ route('login.admin.post') }}" method="POST">
+                    @csrf
+                    <div class="mb-2">
+                        <input type="text" name="username" class="form-control" placeholder="Username admin">
+                    </div>
+                    <div class="mb-2">
+                        <input type="password" name="password" class="form-control" placeholder="Password admin">
+                    </div>
+                    <button type="submit" class="btn btn-outline-secondary w-100">Login Admin</button>
+                </form>
+            </div>
             <hr>
             <p class="text-center mb-0 small">
                 Belum punya akun?
