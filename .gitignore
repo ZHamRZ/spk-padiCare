@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 ```gitignore
 # Compiled and build artifacts
 *.pyc
@@ -15,10 +16,15 @@ __pycache__/
 node_modules/
 vendor/
 composer.lock
+=======
+# Environment
+
+>>>>>>> Stashed changes
 .env
 .env.local
 .env.*
 
+<<<<<<< Updated upstream
 # Build directories
 dist/
 build/
@@ -46,3 +52,35 @@ Thumbs.db
 .pytest_cache/
 .gradle/
 ```
+=======
+# Dependencies
+
+/vendor
+/node_modules
+
+# Laravel
+
+/storage/*.key
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/bootstrap/cache/*
+
+# Public storage (symlink)
+
+public/storage
+
+# Editor
+
+.vscode/
+.idea/
+
+# OS / temporary
+
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+>>>>>>> Stashed changes

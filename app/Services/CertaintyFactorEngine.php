@@ -203,34 +203,16 @@ class CertaintyFactorEngine
     /**
      * Normalisasi nilai ke range [0, 1]
      */
-    public function normalize(float $value): float
+    private function normalize(float $value): float
     {
         return max(0, min(1, $value));
     }
 
-    /**
-     * Normalisasi nilai ke range custom [min, max]
-     * Public agar bisa dipanggil dari service lain
-     */
+    
     public function normalizeToRange(float $value, float $min, float $max): float
-    {
-        return max($min, min($max, $value));
-    }
-
-    /**
-     * Hitung adjustment berdasarkan preset preferensi
-     * Public agar bisa dipanggil dari RecommendationService
-     */
-    public function getPresetAdjustment(string $preset, float $baseCf, array $data): float
-    {
-        return match ($preset) {
-            'hemat' => $this->calculateHematAdjustment($data),
-            'efisiensi' => $this->calculateEfisiensiAdjustment($baseCf),
-            'seimbang' => 0.02,
-            'custom' => 0.0,
-            default => 0.0,
-        };
-    }
+{
+    return max($min, min($max, $value));
+}
 
     /**
      * Konversi CF ke persentase untuk display (0-100%)
