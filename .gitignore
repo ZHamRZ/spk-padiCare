@@ -1,29 +1,48 @@
+```gitignore
 # Compiled and build artifacts
 *.pyc
 __pycache__/
 *.o
 *.obj
-*.log
-*.tmp
-*.swp
+*.class
+*.exe
+*.dll
+*.so
+*.a
+*.out
 
 # Dependencies
-vendor/
 node_modules/
-
-# Environment
+vendor/
+composer.lock
 .env
 .env.local
 .env.*
 
-# Editors
+# Build directories
+dist/
+build/
+target/
+coverage/
+htmlcov/
+*.log
+*.tmp
+*.swp
+*.swo
+
+# IDE and editor files
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Laravel specific
-storage/
-bootstrap/cache/
-public/storage
+# System files
+.DS_Store
+Thumbs.db
 
-# Original rules preserved
-*.log
+# Cache directories
+.cache/
+.mypy_cache/
+.pytest_cache/
+.gradle/
+```
