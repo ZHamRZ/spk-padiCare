@@ -39,5 +39,6 @@ public/storage
 Thumbs.db
 
 # Database
+
 *.sql
 db_spk_padi.sql
