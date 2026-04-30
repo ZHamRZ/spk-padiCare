@@ -236,7 +236,7 @@ class RekomendasiController extends Controller
         return $items->map(function (array $item) use ($type) {
             return (object) [
                 'peringkat' => $item['peringkat'],
-                'nilai_vi' => $item['vi'],
+                'nilai_vi' => data_get($item, 'vi', data_get($item, 'cf_rekomendasi', 0)),
                 $type => (object) [
                     'kode' => $item['kode'],
                     'nama' => $item['nama'],
