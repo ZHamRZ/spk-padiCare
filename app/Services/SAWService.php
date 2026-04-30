@@ -16,6 +16,9 @@ use RuntimeException;
 
 class SAWService
 {
+    public function __construct(
+        private CertaintyFactorEngine $cfEngine
+    ) {}
     public function hitung(int $idUser, int $idPenyakit, array $preferensi = []): Rekomendasi
     {
         $preview = $this->preview($idPenyakit, $preferensi);
@@ -179,12 +182,14 @@ class SAWService
 
     public function calculateCf(float $mb, float $md): float
     {
-        return round(max(0, min(1, $mb - $md)), 6);
+        // Delegate ke CF Engine untuk konsistensi
+        return $this->cfEngine->calculateCf($mb, $md);
     }
 
     public function combineCf(float $cf1, float $cf2): float
     {
-        return round($cf1 + ($cf2 * (1 - $cf1)), 6);
+        // Delegate ke CF Engine untuk konsistensi rumus kombinasi
+        return $this->cfEngine->combineCf($cf1, $cf2);
     }
 
     public function applyPreferenceRules(

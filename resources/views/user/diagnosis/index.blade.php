@@ -62,12 +62,85 @@
         border-radius: 14px;
         background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     }
+    
+    /* Symptom Weight Slider */
+    .weight-slider-container {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px dashed #e2e8f0;
+        display: none;
+    }
+    
+    .symptom-card input:checked + label .weight-slider-container {
+        display: block;
+    }
+    
+    .weight-slider-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .weight-slider {
+        width: 100%;
+        height: 6px;
+        -webkit-appearance: none;
+        appearance: none;
+        background: #e2e8f0;
+        border-radius: 999px;
+        outline: none;
+    }
+    
+    .weight-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        background: #16a34a;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(22, 163, 74, 0.3);
+        transition: transform 0.15s ease;
+    }
+    
+    .weight-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.15);
+    }
+    
+    .weight-slider::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        background: #16a34a;
+        border-radius: 50%;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 2px 4px rgba(22, 163, 74, 0.3);
+    }
+    
+    .weight-value-display {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #16a34a;
+        text-align: right;
+        margin-top: 4px;
+    }
+    
+    .weight-hint {
+        font-size: 0.65rem;
+        color: #94a3b8;
+        margin-top: 2px;
+    }
 </style>
 @endpush
 
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // Search functionality
         const input = document.getElementById('diagnosis-search');
         const cards = Array.from(document.querySelectorAll('[data-gejala-card]'));
         const emptyState = document.getElementById('diagnosis-empty-state');
@@ -88,6 +161,45 @@
             if (emptyState) {
                 emptyState.classList.toggle('d-none', visibleCount !== 0);
             }
+        });
+
+        // Weight slider functionality
+        const sliders = document.querySelectorAll('.weight-slider');
+        sliders.forEach(slider => {
+            const display = slider.parentElement.querySelector('.weight-value-display');
+            if (display) {
+                display.textContent = `${slider.value}%`;
+                
+                slider.addEventListener('input', function() {
+                    display.textContent = `${this.value}%`;
+                    
+                    // Update gradient color based on value
+                    const percentage = this.value;
+                    const color = percentage >= 70 ? '#16a34a' : (percentage >= 40 ? '#ca8a04' : '#dc2626');
+                    this.style.background = `linear-gradient(to right, ${color} 0%, ${color} ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`;
+                });
+                
+                // Initialize gradient
+                const percentage = slider.value;
+                const color = percentage >= 70 ? '#16a34a' : (percentage >= 40 ? '#ca8a04' : '#dc2626');
+                slider.style.background = `linear-gradient(to right, ${color} 0%, ${color} ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`;
+            }
+        });
+        
+        // Auto-check checkbox when slider is moved
+        sliders.forEach(slider => {
+            slider.addEventListener('change', function() {
+                const card = this.closest('.symptom-card');
+                if (card) {
+                    const checkbox = card.querySelector('input[type="checkbox"]');
+                    if (checkbox && parseInt(this.value) > 50 && !checkbox.checked) {
+                        checkbox.checked = true;
+                        // Trigger visual update
+                        const event = new Event('change', { bubbles: true });
+                        checkbox.dispatchEvent(event);
+                    }
+                }
+            });
         });
     });
 </script>
@@ -151,6 +263,27 @@
                                         <span class="small text-muted">Pilih jika gejala terlihat</span>
                                     </div>
                                     <div class="fw-semibold">{{ $item->nama_gejala }}</div>
+                                    
+                                    {{-- Weight Slider - Only visible when checked --}}
+                                    <div class="weight-slider-container">
+                                        <div class="weight-slider-label">
+                                            <i class="bi bi-sliders"></i>
+                                            Tingkat Keyakinan Gejala
+                                        </div>
+                                        <input type="range" 
+                                               class="weight-slider" 
+                                               name="gejala_weights[{{ $item->id }}]" 
+                                               min="0" 
+                                               max="100" 
+                                               value="{{ old('gejala_weights.' . $item->id, 80) }}"
+                                               data-symptom-id="{{ $item->id }}">
+                                        <div class="weight-value-display">{{ old('gejala_weights.' . $item->id, 80) }}%</div>
+                                        <div class="weight-hint">
+                                            <span class="text-success">≥70%:</span> Yakin
+                                            <span class="text-warning ms-2">40-69%:</span> Ragu-ragu
+                                            <span class="text-danger ms-2">&lt;40%:</span> Tidak yakin
+                                        </div>
+                                    </div>
                                 </div>
                             </label>
                         </div>
