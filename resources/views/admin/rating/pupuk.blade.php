@@ -39,7 +39,7 @@
 
         <form action="{{ route('admin.rating.pupuk.simpan') }}" method="POST" id="ratingForm">
             @csrf
-            <div id="stickyHeader" class="position-sticky top-0 bg-white py-2 mb-3 d-none">
+            <div class="position-sticky top-0 bg-white py-2 mb-3 d-none" id="stickyHeader" style="z-index: 1020;">
                 <button type="submit" class="btn btn-spk">Simpan Aturan CF Pupuk</button>
                 <span class="ms-2 text-muted small">Total: <span id="totalRules">0</span> rule</span>
             </div>
@@ -109,7 +109,7 @@
             </div>
             @endforeach
             
-            <div class="position-fixed bottom-0 start-0 w-100 bg-white border-top p-3 shadow-lg d-none" id="stickyFooter">
+            <div class="position-fixed bottom-0 start-0 w-100 bg-white border-top p-3 shadow-lg d-none" id="stickyFooter" style="z-index: 1020;">
                 <div class="container-fluid">
                     <div class="row align-items-center">
                         <div class="col-auto">
