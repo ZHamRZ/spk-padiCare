@@ -203,16 +203,20 @@ class CertaintyFactorEngine
     /**
      * Normalisasi nilai ke range [0, 1]
      */
-    private function normalize(float $value): float
+    public function normalize(float $value): float
     {
         return max(0, min(1, $value));
     }
 
-    
+    /**
+     * Normalisasi nilai ke range custom [min, max]
+     */
     public function normalizeToRange(float $value, float $min, float $max): float
-{
-    return max($min, min($max, $value));
-}
+    {
+        return max($min, min($max, $value));
+
+    }
+    
 
     /**
      * Konversi CF ke persentase untuk display (0-100%)

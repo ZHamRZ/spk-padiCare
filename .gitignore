@@ -1,58 +1,9 @@
-<<<<<<< Updated upstream
-```gitignore
-# Compiled and build artifacts
-*.pyc
-__pycache__/
-*.o
-*.obj
-*.class
-*.exe
-*.dll
-*.so
-*.a
-*.out
-
-# Dependencies
-node_modules/
-vendor/
-composer.lock
-=======
 # Environment
 
->>>>>>> Stashed changes
 .env
 .env.local
 .env.*
 
-<<<<<<< Updated upstream
-# Build directories
-dist/
-build/
-target/
-coverage/
-htmlcov/
-*.log
-*.tmp
-*.swp
-*.swo
-
-# IDE and editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# System files
-.DS_Store
-Thumbs.db
-
-# Cache directories
-.cache/
-.mypy_cache/
-.pytest_cache/
-.gradle/
-```
-=======
 # Dependencies
 
 /vendor
@@ -83,4 +34,3 @@ public/storage
 *.swp
 .DS_Store
 Thumbs.db
->>>>>>> Stashed changes
