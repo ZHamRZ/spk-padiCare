@@ -3,10 +3,18 @@
 namespace App\Services;
 
 use App\Models\Penyakit;
+use Illuminate\Support\Collection;
 
 class DiagnosisService
 {
-    public function identify(array $symptomIds): array
+    public function __construct(
+        private CertaintyFactorEngine $cfEngine
+    ) {}
+
+    /**
+     * Identifikasi penyakit berdasarkan gejala yang dipilih menggunakan Certainty Factor
+     */
+    public function identify(array $symptomIds, array $userWeights = []): array
     {
         $symptomIds = collect($symptomIds)
             ->map(fn ($id) => (int) $id)
@@ -15,29 +23,67 @@ class DiagnosisService
             ->all();
 
         $diagnoses = [];
-        $diseases = Penyakit::with('gejala')->get();
+        // Eager load gejala dengan pivot mb/md untuk performa
+        $diseases = Penyakit::with(['gejala' => function ($query) {
+            $query->withPivot(['mb', 'md']);
+        }])->get();
 
         foreach ($diseases as $disease) {
-            $diseaseSymptoms = $disease->gejala->pluck('id')->map(fn ($id) => (int) $id)->all();
-            $matched = array_values(array_intersect($symptomIds, $diseaseSymptoms));
-            $totalSymptoms = count($diseaseSymptoms);
-
-            if ($totalSymptoms === 0 || empty($matched)) {
+            $diseaseSymptoms = $disease->gejala;
+            
+            if ($diseaseSymptoms->isEmpty()) {
                 continue;
             }
 
-            $confidence = round(count($matched) / $totalSymptoms, 4);
+            // Filter gejala yang cocok dengan input user
+            $matchedSymptoms = $diseaseSymptoms->filter(function ($gejala) use ($symptomIds) {
+                return in_array((int) $gejala->id, $symptomIds, true);
+            });
+
+            if ($matchedSymptoms->isEmpty()) {
+                continue;
+            }
+
+            // Hitung CF menggunakan engine
+            $cf = $this->cfEngine->calculateDiagnosisCf(
+                $matchedSymptoms,
+                $diseaseSymptoms,
+                $userWeights
+            );
+
+            // Konversi ke persentase untuk display
+            $confidencePercent = round($this->cfEngine->toPercentage($cf));
+            
+            // Interpretasi CF
+            $interpretation = $this->cfEngine->interpret($cf);
 
             $diagnoses[] = [
                 'penyakit' => $disease,
-                'cocok' => count($matched),
-                'total' => $totalSymptoms,
-                'persen' => round($confidence * 100),
-                'confidence' => $confidence,
-                'matched_gejala_ids' => $matched,
+                'cocok' => $matchedSymptoms->count(),
+                'total' => $diseaseSymptoms->count(),
+                'persen' => $confidencePercent,
+                'confidence' => $cf,
+                'cf_raw' => $cf,
+                'interpretation' => $interpretation,
+                'matched_gejala_ids' => $matchedSymptoms->pluck('id')->values()->all(),
+                'matched_gejala_detail' => $matchedSymptoms->map(function ($gejala) {
+                    return [
+                        'id' => $gejala->id,
+                        'kode' => $gejala->kode,
+                        'nama_gejala' => $gejala->nama_gejala,
+                        'gambar_url' => $gejala->gambar_url,
+                        'mb' => round((float) ($gejala->pivot->mb ?? 0.7), 3),
+                        'md' => round((float) ($gejala->pivot->md ?? 0.1), 3),
+                        'cf' => round($this->cfEngine->calculateCf(
+                            (float) ($gejala->pivot->mb ?? 0.7),
+                            (float) ($gejala->pivot->md ?? 0.1)
+                        ), 3),
+                    ];
+                })->values()->all(),
             ];
         }
 
+        // Urutkan berdasarkan confidence tertinggi
         usort($diagnoses, fn ($left, $right) => $right['confidence'] <=> $left['confidence']);
 
         return [
@@ -46,6 +92,8 @@ class DiagnosisService
                 'top_diagnosis' => $diagnoses[0] ?? null,
                 'total_matches' => count($diagnoses),
                 'selected_symptom_total' => count($symptomIds),
+                'method' => 'Certainty Factor',
+                'cf_formula' => 'CF = MB - MD, CFcombine = CF1 + CF2 * (1 - CF1)',
             ],
         ];
     }

@@ -251,47 +251,149 @@
         justify-content: space-between;
         padding: 10px 14px;
         color: #16a34a;
-        background: transparent;
-        font-size: .8rem;
+        background: linear-gradient(to right, #f0fdf4, #fff);
+        font-size: .82rem;
         font-weight: 700;
         cursor: pointer;
         user-select: none;
-        transition: background .15s;
+        transition: all .2s ease;
+        border-radius: 0 0 12px 12px;
     }
     .detail-toggle summary::-webkit-details-marker { display: none; }
-    .detail-toggle summary:hover { background: #f0fdf4; }
+    .detail-toggle summary:hover { 
+        background: linear-gradient(to right, #dcfce7, #f0fdf4);
+        padding-left: 18px;
+    }
     .detail-toggle[open] summary {
-        background: #f0fdf4;
+        background: linear-gradient(to right, #dcfce7, #f0fdf4);
         border-bottom: 1px solid #bbf7d0;
+        border-radius: 0;
     }
     .detail-toggle summary .chevron {
-        transition: transform .2s;
-        font-size: .7rem;
+        transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: .75rem;
+        width: 22px;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #f0fdf4;
     }
     .detail-toggle[open] summary .chevron {
         transform: rotate(180deg);
+        background: #16a34a;
+        color: #fff;
     }
     .detail-panel {
+        padding: 0;
+        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease-out, padding 0.3s ease;
+    }
+    .detail-toggle[open] .detail-panel {
+        max-height: 450px;
+        overflow-y: auto;
         padding: 14px;
-        background: #f8fafc;
+    }
+    .detail-panel::-webkit-scrollbar {
+        width: 5px;
+    }
+    .detail-panel::-webkit-scrollbar-track {
+        background: #e2e8f0;
+        border-radius: 3px;
+    }
+    .detail-panel::-webkit-scrollbar-thumb {
+        background: #94a3b8;
+        border-radius: 3px;
     }
     .detail-list {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 6px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
     }
     .detail-row {
         background: #fff;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
-        padding: 8px 10px;
+        padding: 10px;
+        transition: all .2s ease;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .detail-row:hover {
+        border-color: #16a34a;
+        box-shadow: 0 2px 6px rgba(22, 163, 74, 0.1);
+        transform: translateY(-1px);
     }
     .detail-row.full { grid-column: 1 / -1; }
     .detail-row.span2 { grid-column: span 2; }
-    .detail-row .dl { font-size: .7rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; margin-bottom: 2px; }
-    .detail-row .dv { font-size: .8rem; color: #1e293b; font-weight: 500; word-break: break-word;
-        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-    .detail-row.full .dv, .detail-row.span2 .dv { -webkit-line-clamp: 4; }
+    .detail-row .dl { 
+        font-size: .65rem; 
+        color: #64748b; 
+        font-weight: 700; 
+        text-transform: uppercase; 
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .detail-row .dl::before {
+        content: '';
+        width: 3px;
+        height: 3px;
+        background: #16a34a;
+        border-radius: 50%;
+    }
+    .detail-row .dv { 
+        font-size: .78rem; 
+        color: #1e293b; 
+        font-weight: 500; 
+        word-break: break-word;
+        line-height: 1.4;
+        display: -webkit-box; 
+        -webkit-line-clamp: 2; 
+        -webkit-box-orient: vertical; 
+        overflow: hidden; 
+    }
+    .detail-row.full .dv, .detail-row.span2 .dv { 
+        -webkit-line-clamp: 3;
+        font-size: .8rem;
+    }
+    .detail-section-title {
+        font-size: .8rem;
+        font-weight: 700;
+        color: #16a34a;
+        margin: 12px 0 10px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding-bottom: 6px;
+        border-bottom: 2px solid #bbf7d0;
+    }
+    
+    /* Preference Adjustment Badge */
+    .adjustment-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        margin-left: 6px;
+    }
+    .adjustment-badge.positive {
+        background: #dcfce7;
+        color: #166534;
+    }
+    .adjustment-badge.negative {
+        background: #fee2e2;
+        color: #991b1b;
+    }
 
     /* ── Action Buttons ────────────────────────────── */
     .action-bar {
@@ -307,10 +409,19 @@
         font-weight: 600;
     }
 
+    /* ── Product Grid Optimization ──────────────────── */
+    .product-grid-wrapper {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 16px;
+    }
+
     /* ── Mobile Responsive ─────────────────────────── */
     @media (max-width: 991px) {
         .disease-meta-grid { grid-template-columns: repeat(3, 1fr); }
         .batch-card { border-radius: 16px; }
+        .product-grid-wrapper { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+        .detail-list { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 767px) {
         .result-hero { border-radius: 14px; padding: 18px !important; }
@@ -321,13 +432,18 @@
         .disease-meta-grid { grid-template-columns: 1fr 1fr; }
         .detail-list { grid-template-columns: 1fr 1fr; }
         .detail-row.full { grid-column: 1 / -1; }
-        .detail-row.span2 { grid-column: 1 / -1; }        .action-bar .btn { flex: 1; min-width: 140px; text-align: center; }
+        .detail-row.span2 { grid-column: 1 / -1; }
+        .product-grid-wrapper { grid-template-columns: 1fr; }
+        .action-bar .btn { flex: 1; min-width: 140px; text-align: center; }
         .section-label { font-size: .68rem; }
+        .detail-toggle[open] .detail-panel { max-height: 400px; }
     }
     @media (max-width: 480px) {
         .disease-meta-grid { grid-template-columns: 1fr 1fr; }
         .summary-chip { font-size: .76rem; padding: .3rem .6rem; }
         .product-name { font-size: .88rem; }
+        .detail-list { grid-template-columns: 1fr; }
+        .detail-row .dv { -webkit-line-clamp: 3; }
     }
 </style>
 @endpush
@@ -506,10 +622,9 @@
             <div class="section-label">
                 <i class="bi bi-bag-fill text-success"></i> Rekomendasi Pupuk
             </div>
-            <div class="row g-3 mb-4">
+            <div class="product-grid-wrapper mb-4">
                 @foreach($recommendedPupuk as $item)
-                <div class="col-md-6 col-lg-4 d-flex">
-                    <div class="product-card w-100">
+                <div class="product-card">
                         {{-- Image --}}
                         @if(optional($item->pupuk)->gambar_url)
                             <img src="{{ $item->pupuk->gambar_url }}"
@@ -549,6 +664,12 @@
                                          style="width: {{ ExpertSystemPresenter::percent($item->nilai_vi) }}"></div>
                                 </div>
                                 <span class="score-label">{{ ExpertSystemPresenter::percent($item->nilai_vi) }}</span>
+                                @if(data_get($item, 'adjustment_info.preset_boost', 0) != 0)
+                                    <span class="adjustment-badge {{ data_get($item, 'adjustment_info.preset_boost', 0) > 0 ? 'positive' : 'negative' }}">
+                                        <i class="bi bi-{{ data_get($item, 'adjustment_info.preset_boost', 0) > 0 ? 'arrow-up' : 'arrow-down' }}"></i>
+                                        {{ number_format(abs(data_get($item, 'adjustment_info.preset_boost', 0)) * 100, 1) }}%
+                                    </span>
+                                @endif
                                 <span class="badge text-bg-{{ ExpertSystemPresenter::confidenceTone($item->nilai_vi) }}" style="font-size:.7rem;">
                                     {{ ExpertSystemPresenter::confidenceLabel($item->nilai_vi) }}
                                 </span>
@@ -608,10 +729,9 @@
             <div class="section-label">
                 <i class="bi bi-shield-fill-check text-warning"></i> Rekomendasi Pestisida
             </div>
-            <div class="row g-3">
+            <div class="product-grid-wrapper">
                 @foreach($recommendedPestisida as $item)
-                <div class="col-md-6 col-lg-4 d-flex">
-                    <div class="product-card w-100">
+                <div class="product-card">
                         {{-- Image --}}
                         @if(optional($item->pestisida)->gambar_url)
                             <img src="{{ $item->pestisida->gambar_url }}"
@@ -651,11 +771,16 @@
                                          style="width: {{ ExpertSystemPresenter::percent($item->nilai_vi) }}"></div>
                                 </div>
                                 <span class="score-label">{{ ExpertSystemPresenter::percent($item->nilai_vi) }}</span>
+                                @if(data_get($item, 'adjustment_info.preset_boost', 0) != 0)
+                                    <span class="adjustment-badge {{ data_get($item, 'adjustment_info.preset_boost', 0) > 0 ? 'positive' : 'negative' }}">
+                                        <i class="bi bi-{{ data_get($item, 'adjustment_info.preset_boost', 0) > 0 ? 'arrow-up' : 'arrow-down' }}"></i>
+                                        {{ number_format(abs(data_get($item, 'adjustment_info.preset_boost', 0)) * 100, 1) }}%
+                                    </span>
+                                @endif
                                 <span class="badge text-bg-{{ ExpertSystemPresenter::confidenceTone($item->nilai_vi) }}" style="font-size:.7rem;">
                                     {{ ExpertSystemPresenter::confidenceLabel($item->nilai_vi) }}
                                 </span>
                             </div>
-                        </div>
 
                         {{-- Detail Toggle --}}
                         <details class="detail-toggle">
@@ -701,7 +826,7 @@
                     </div>
                 </div>
                 @endforeach
-            </div>
+            </div>{{-- end product-grid-wrapper --}}
             @endif
 
         </div>{{-- end right col --}}

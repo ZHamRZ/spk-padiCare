@@ -32,13 +32,31 @@ class DiagnosisController extends Controller
         $request->validate([
             'gejala' => 'required|array|min:1',
             'gejala.*' => 'exists:gejala,id',
+            'gejala_weights' => 'nullable|array',
+            'gejala_weights.*' => 'nullable|numeric|min:0|max:100',
         ], [
             'gejala.required' => 'Pilih minimal 1 gejala yang dialami tanaman.',
             'gejala.min' => 'Pilih minimal 1 gejala yang dialami tanaman.',
         ]);
 
         $idGejalaInput = collect($request->gejala)->map(fn ($id) => (int) $id)->all();
-        $diagnosisResult = $this->diagnosisService->identify($idGejalaInput);
+        
+        // Ambil bobot keyakinan user untuk setiap gejala (dari slider input)
+        $userWeights = [];
+        if ($request->filled('gejala_weights')) {
+            foreach ($request->gejala_weights as $gejalaId => $weight) {
+                if (in_array((int)$gejalaId, $idGejalaInput, true)) {
+                    $userWeights[(int)$gejalaId] = (float) $weight;
+                }
+            }
+        }
+        
+        // Jika tidak ada weight spesifik, gunakan default 1.0 untuk semua gejala terpilih
+        if (empty($userWeights)) {
+            $userWeights = array_fill_keys($idGejalaInput, 1.0);
+        }
+
+        $diagnosisResult = $this->diagnosisService->identify($idGejalaInput, $userWeights);
         $skorPenyakit = $diagnosisResult['diagnoses'];
 
         if (empty($skorPenyakit)) {
@@ -51,6 +69,7 @@ class DiagnosisController extends Controller
             'diagnosis_result' => [
                 'skorPenyakit' => $skorPenyakit,
                 'gejala_ids' => $idGejalaInput,
+                'gejala_weights' => $userWeights,
                 'summary' => $diagnosisResult['summary'],
             ],
         ]);
@@ -116,12 +135,17 @@ class DiagnosisController extends Controller
             ->values()
             ->all();
 
+        // Ambil bobot gejala dari session diagnosis (jika ada)
+        $diagnosisPayload = session('diagnosis_result');
+        $gejalaWeights = $diagnosisPayload['gejala_weights'] ?? [];
+
         $preferensi = [
             'preset' => $request->preferensi_tipe,
             'alasan' => $request->preferensi_alasan,
             'catatan' => $request->preferensi_catatan,
             'gejala_terpilih' => $gejalaTerpilih,
             'kriteria' => $request->input('preferensi_kriteria', []),
+            'gejala_weights' => $gejalaWeights,
         ];
 
         $presets = $this->recommendationService->getPreferencePresets();
@@ -136,7 +160,15 @@ class DiagnosisController extends Controller
 
             foreach ($idPenyakitList as $idPenyakit) {
                 $penyakit = $penyakitList->get($idPenyakit);
-                $preview = $this->recommendationService->previewForDisease($idPenyakit, $preferensi);
+                
+                // Gunakan calculateWithPreferences untuk integrasi penuh preferensi user
+                $preview = $this->recommendationService->calculateWithPreferences(
+                    $idPenyakit,
+                    $request->preferensi_tipe,
+                    $request->input('preferensi_kriteria', []),
+                    $gejalaWeights
+                );
+                
                 $rekomendasi = Auth::check()
                     ? $this->recommendationService->saveForUser(Auth::id(), $idPenyakit, $preferensi)
                     : null;
@@ -151,6 +183,7 @@ class DiagnosisController extends Controller
                         'catatan' => $request->preferensi_catatan,
                         'gejala_terpilih' => $gejalaTerpilih,
                         'kriteria' => $preferensi['kriteria'],
+                        'gejala_weights' => $gejalaWeights,
                     ],
                     'preview' => $preview,
                 ];
