@@ -234,43 +234,55 @@ class RekomendasiController extends Controller
     private function buildPreviewAlternatives(Collection $items, string $type): Collection
     {
         return $items->map(function (array $item) use ($type) {
+            // Gunakan cf_rekomendasi atau cf_percentage sebagai nilai_vi
+            $cfValue = data_get($item, 'cf_rekomendasi', 0);
+            $cfPercentage = data_get($item, 'cf_percentage', 0);
+            
             $productData = [
                 'kode' => $item['kode'],
                 'nama' => $item['nama'],
-                'gambar_url' => data_get($item, 'meta.gambar_url'),
-                'gejala_cocok' => data_get($item, 'meta.gejala_cocok', []),
+                'gambar_url' => data_get($item, 'gambar_url'),
+                'gejala_cocok' => collect(data_get($item, 'symptom_details', []))->map(function ($symptom) {
+                    return [
+                        'id' => data_get($symptom, 'id'),
+                        'kode' => data_get($symptom, 'kode'),
+                        'nama_gejala' => data_get($symptom, 'nama_gejala'),
+                    ];
+                })->toArray(),
             ];
             
             // Tambahkan field spesifik pupuk
             if ($type === 'pupuk') {
                 $productData = array_merge($productData, [
-                    'kandungan' => data_get($item, 'meta.kandungan'),
-                    'kandungan_detail' => data_get($item, 'meta.kandungan_detail'),
-                    'fungsi_utama' => data_get($item, 'meta.fungsi_utama'),
-                    'takaran' => data_get($item, 'meta.takaran'),
-                    'efek_penggunaan' => data_get($item, 'meta.efek_penggunaan'),
-                    'cara_aplikasi' => data_get($item, 'meta.cara_aplikasi'),
-                    'jadwal_umur_aplikasi' => data_get($item, 'meta.jadwal_umur_aplikasi'),
-                    'frekuensi_aplikasi' => data_get($item, 'meta.frekuensi_aplikasi'),
+                    'kandungan' => data_get($item, 'kandungan'),
+                    'kandungan_detail' => data_get($item, 'kandungan_detail'),
+                    'fungsi_utama' => data_get($item, 'fungsi_utama'),
+                    'takaran' => data_get($item, 'takaran'),
+                    'efek_penggunaan' => data_get($item, 'efek_penggunaan'),
+                    'cara_aplikasi' => data_get($item, 'cara_aplikasi'),
+                    'jadwal_umur_aplikasi' => null, // Tidak ada di pupuk
+                    'frekuensi_aplikasi' => null, // Tidak ada di pupuk
                 ]);
             } 
             // Tambahkan field spesifik pestisida
             else {
                 $productData = array_merge($productData, [
-                    'bahan_aktif' => data_get($item, 'meta.bahan_aktif'),
-                    'fungsi' => data_get($item, 'meta.fungsi'),
-                    'dosis' => data_get($item, 'meta.dosis'),
-                    'efek_penggunaan' => data_get($item, 'meta.efek_penggunaan'),
-                    'cara_aplikasi' => data_get($item, 'meta.cara_aplikasi'),
-                    'jadwal_umur_aplikasi' => data_get($item, 'meta.jadwal_umur_aplikasi'),
-                    'frekuensi_aplikasi' => data_get($item, 'meta.frekuensi_aplikasi'),
+                    'bahan_aktif' => data_get($item, 'bahan_aktif'),
+                    'fungsi' => data_get($item, 'fungsi'),
+                    'dosis' => data_get($item, 'dosis'),
+                    'efek_penggunaan' => data_get($item, 'efek_penggunaan'),
+                    'cara_aplikasi' => data_get($item, 'cara_aplikasi'),
+                    'jadwal_umur_aplikasi' => null, // Tidak ada di pestisida
+                    'frekuensi_aplikasi' => null, // Tidak ada di pestisida
                 ]);
             }
             
             return (object) [
                 'peringkat' => $item['peringkat'],
-                'nilai_vi' => data_get($item, 'vi', data_get($item, 'cf_rekomendasi', 0)),
-                'adjustment_info' => data_get($item, 'adjustment_info', []),
+                'nilai_vi' => $cfValue,
+                'cf_percentage' => $cfPercentage,
+                'adjustment_info' => [],
+                'interpretation' => data_get($item, 'interpretation', []),
                 $type => (object) $productData,
             ];
         })->values();
