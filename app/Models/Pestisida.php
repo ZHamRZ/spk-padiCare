@@ -27,11 +27,6 @@ class Pestisida extends Model
         'gambar',
     ];
 
-    public function ratingPestisida()
-    {
-        return $this->hasMany(RatingPestisida::class, 'id_pestisida');
-    }
-
     public function detailRekomendasi()
     {
         return $this->hasMany(DetailRekomendasiPestisida::class, 'id_pestisida');

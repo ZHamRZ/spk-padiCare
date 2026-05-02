@@ -62,16 +62,6 @@ class Penyakit extends Model
         return $relation;
     }
 
-    public function ratingPupuk()
-    {
-        return $this->hasMany(RatingPupuk::class, 'id_penyakit');
-    }
-
-    public function ratingPestisida()
-    {
-        return $this->hasMany(RatingPestisida::class, 'id_penyakit');
-    }
-
     public function rekomendasi()
     {
         return $this->hasMany(Rekomendasi::class, 'id_penyakit');

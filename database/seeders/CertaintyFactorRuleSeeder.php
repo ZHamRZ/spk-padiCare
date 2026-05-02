@@ -8,8 +8,6 @@ use App\Models\GejalaPupuk;
 use App\Models\Kriteria;
 use App\Models\Pestisida;
 use App\Models\Pupuk;
-use App\Models\RatingPestisida;
-use App\Models\RatingPupuk;
 use App\Support\CfSchema;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -40,26 +38,13 @@ class CertaintyFactorRuleSeeder extends Seeder
         $fertilizerIds = Pupuk::query()->pluck('id');
         $pesticideIds = Pestisida::query()->pluck('id');
 
-        $pupukRatings = RatingPupuk::query()
-            ->get(['id_penyakit', 'id_pupuk', 'id_kriteria', 'nilai'])
-            ->groupBy(fn ($item) => $item->id_penyakit . ':' . $item->id_pupuk);
-
-        $pestisidaRatings = RatingPestisida::query()
-            ->get(['id_penyakit', 'id_pestisida', 'id_kriteria', 'nilai'])
-            ->groupBy(fn ($item) => $item->id_penyakit . ':' . $item->id_pestisida);
-
         $timestamp = now();
         $pupukRules = [];
         $pestisidaRules = [];
 
         foreach ($gejalaList as $gejala) {
             foreach ($fertilizerIds as $fertilizerId) {
-                [$mb, $md] = $this->resolveSymptomCfPair(
-                    $gejala->penyakit,
-                    $pupukRatings,
-                    $criteriaWeights,
-                    (int) $fertilizerId
-                );
+                [$mb, $md] = $this->resolveSymptomCfPairDefault();
 
                 $pupukRules[] = [
                     'id_gejala' => $gejala->id,
@@ -72,12 +57,7 @@ class CertaintyFactorRuleSeeder extends Seeder
             }
 
             foreach ($pesticideIds as $pesticideId) {
-                [$mb, $md] = $this->resolveSymptomCfPair(
-                    $gejala->penyakit,
-                    $pestisidaRatings,
-                    $criteriaWeights,
-                    (int) $pesticideId
-                );
+                [$mb, $md] = $this->resolveSymptomCfPairDefault();
 
                 $pestisidaRules[] = [
                     'id_gejala' => $gejala->id,
@@ -105,71 +85,9 @@ class CertaintyFactorRuleSeeder extends Seeder
         $this->command?->info('Semua aturan CF pupuk dan pestisida per gejala berhasil diisi.');
     }
 
-    private function resolveSymptomCfPair(
-        Collection $linkedDiseases,
-        Collection $ratingMap,
-        Collection $criteriaWeights,
-        int $itemId
-    ): array {
-        if ($linkedDiseases->isEmpty()) {
-            return [0.700, 0.100];
-        }
-
-        $weightedCf = 0.0;
-        $confidenceTotal = 0.0;
-        $matchedCount = 0;
-
-        foreach ($linkedDiseases as $disease) {
-            $ratings = $ratingMap->get($disease->id . ':' . $itemId, collect());
-            $symptomMb = (float) ($disease->pivot->mb ?? 0.7);
-            $symptomMd = (float) ($disease->pivot->md ?? 0.1);
-            $symptomConfidence = max(0.1, min(1, $symptomMb - $symptomMd));
-
-            if ($ratings->isEmpty()) {
-                continue;
-            }
-
-            [$ruleMb, $ruleMd] = $this->resolveCfPair($ratings, $criteriaWeights);
-            $ruleCf = max(0.05, $ruleMb - $ruleMd);
-
-            $weightedCf += $ruleCf * $symptomConfidence;
-            $confidenceTotal += $symptomConfidence;
-            $matchedCount++;
-        }
-
-        if ($matchedCount === 0) {
-            $averageConfidence = (float) $linkedDiseases
-                ->map(fn ($disease) => max(0.1, min(1, (float) ($disease->pivot->mb ?? 0.7) - (float) ($disease->pivot->md ?? 0.1))))
-                ->avg();
-
-            return $this->mapConfidenceToCfPair($averageConfidence > 0 ? $averageConfidence : 0.6);
-        }
-
-        $normalizedCf = $confidenceTotal > 0
-            ? $weightedCf / $confidenceTotal
-            : 0.6;
-
-        return $this->mapConfidenceToCfPair($normalizedCf);
-    }
-
-    private function resolveCfPair(Collection $ratings, Collection $criteriaWeights): array
+    private function resolveSymptomCfPairDefault(): array
     {
-        if ($ratings->isEmpty()) {
-            return [0.700, 0.100];
-        }
-
-        $weightedScore = $ratings->sum(function ($rating) use ($criteriaWeights) {
-            $weight = (float) ($criteriaWeights->get($rating->id_kriteria, 0) ?: 0);
-
-            return ((float) $rating->nilai / 5) * $weight;
-        });
-
-        $weightTotal = (float) $ratings->sum(fn ($rating) => $criteriaWeights->get($rating->id_kriteria, 0));
-        $normalized = $weightTotal > 0
-            ? $weightedScore / $weightTotal
-            : ((float) $ratings->avg('nilai') / 5);
-
-        return $this->mapConfidenceToCfPair($normalized);
+        return [0.700, 0.100];
     }
 
     private function mapConfidenceToCfPair(float $normalized): array
