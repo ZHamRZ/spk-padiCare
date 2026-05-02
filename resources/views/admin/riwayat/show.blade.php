@@ -20,7 +20,6 @@
         <div class="summary-card p-4 h-100">
             <div class="small text-muted mb-2">Informasi hasil</div>
             <p class="mb-2"><strong>Pengguna:</strong> {{ $rekomendasi->user->nama ?? '-' }}</p>
-            <p class="mb-2"><strong>No. HP:</strong> {{ $rekomendasi->user->no_telp ?? '-' }}</p>
             <p class="mb-2"><strong>Penyakit:</strong> {{ $rekomendasi->penyakit->nama ?? '-' }}</p>
             <p class="mb-0"><strong>Tanggal:</strong> {{ optional($rekomendasi->created_at)->format('d M Y H:i') }}</p>
         </div>

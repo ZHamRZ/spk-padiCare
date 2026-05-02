@@ -698,7 +698,7 @@
                     @if($user)
                     <div class="mb-3">
                         <div style="font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:17px; color:#fff;">{{ $user->nama }}</div>
-                        <div style="font-size:12px; color:rgba(255,255,255,.5); margin-top:2px;">{{ $user->no_telp ?: 'Nomor HP belum diisi' }}</div>
+                        <div style="font-size:12px; color:rgba(255,255,255,.5); margin-top:2px;">{{ $user->username }}</div>
                     </div>
                     <div class="hero-stat-divider d-flex justify-content-between text-center">
                         <div>

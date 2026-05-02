@@ -427,7 +427,7 @@ $statItems = [
                                 {{ $user->nama }}
                             </div>
                             <div style="font-size:12px; color:var(--slate-400);">
-                                {{ $user->username }}{{ $user->no_telp ? ' · ' . $user->no_telp : '' }}
+                                {{ $user->username }}
                             </div>
                         </div>
                         <span style="background:var(--slate-100); color:var(--slate-500); padding:3px 9px; border-radius:100px; font-size:11px; font-weight:700; white-space:nowrap;">

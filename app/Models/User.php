@@ -5,11 +5,10 @@ namespace App\Models;
 use App\Support\ProjectImage;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory;
 
     /**
      * Nama tabel (opsional, tapi kita tulis untuk eksplisit)
@@ -22,8 +21,6 @@ class User extends Authenticatable
     protected $fillable = [
         'nama',
         'username',
-        'email',
-        'no_telp',
         'alamat',
         'catatan_profil',
         'foto_profil',
