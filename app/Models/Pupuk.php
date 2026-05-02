@@ -25,11 +25,6 @@ class Pupuk extends Model
         'gambar',
     ];
 
-    public function ratingPupuk()
-    {
-        return $this->hasMany(RatingPupuk::class, 'id_pupuk');
-    }
-
     public function detailRekomendasi()
     {
         return $this->hasMany(DetailRekomendasiPupuk::class, 'id_pupuk');

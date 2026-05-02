@@ -308,46 +308,6 @@ CREATE TABLE `pupuk` (
   UNIQUE KEY `pupuk_kode_unique` (`kode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `rating_pestisida`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `rating_pestisida` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `id_pestisida` bigint unsigned NOT NULL,
-  `id_kriteria` bigint unsigned NOT NULL,
-  `id_penyakit` bigint unsigned NOT NULL,
-  `nilai` decimal(5,2) NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `rating_pestisida_id_pestisida_id_kriteria_id_penyakit_unique` (`id_pestisida`,`id_kriteria`,`id_penyakit`),
-  KEY `rating_pestisida_id_kriteria_foreign` (`id_kriteria`),
-  KEY `rating_pestisida_id_penyakit_foreign` (`id_penyakit`),
-  CONSTRAINT `rating_pestisida_id_kriteria_foreign` FOREIGN KEY (`id_kriteria`) REFERENCES `kriteria` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `rating_pestisida_id_penyakit_foreign` FOREIGN KEY (`id_penyakit`) REFERENCES `penyakit` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `rating_pestisida_id_pestisida_foreign` FOREIGN KEY (`id_pestisida`) REFERENCES `pestisida` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `rating_pupuk`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `rating_pupuk` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `id_pupuk` bigint unsigned NOT NULL,
-  `id_kriteria` bigint unsigned NOT NULL,
-  `id_penyakit` bigint unsigned NOT NULL,
-  `nilai` decimal(5,2) NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `rating_pupuk_id_pupuk_id_kriteria_id_penyakit_unique` (`id_pupuk`,`id_kriteria`,`id_penyakit`),
-  KEY `rating_pupuk_id_kriteria_foreign` (`id_kriteria`),
-  KEY `rating_pupuk_id_penyakit_foreign` (`id_penyakit`),
-  CONSTRAINT `rating_pupuk_id_kriteria_foreign` FOREIGN KEY (`id_kriteria`) REFERENCES `kriteria` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `rating_pupuk_id_penyakit_foreign` FOREIGN KEY (`id_penyakit`) REFERENCES `penyakit` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `rating_pupuk_id_pupuk_foreign` FOREIGN KEY (`id_pupuk`) REFERENCES `pupuk` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `rekomendasi`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;

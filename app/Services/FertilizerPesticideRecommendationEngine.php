@@ -3,8 +3,6 @@
 namespace App\Services;
 
 use App\Models\Gejala;
-use App\Models\GejalaPupuk;
-use App\Models\GejalaPestisida;
 use App\Models\Pupuk;
 use App\Models\Pestisida;
 use Illuminate\Support\Collection;

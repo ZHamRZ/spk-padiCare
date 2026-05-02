@@ -66,7 +66,6 @@
                         @method('PUT')
                         <input type="hidden" name="nama" value="{{ old('nama', $user->nama) }}">
                         <input type="hidden" name="username" value="{{ old('username', $user->username) }}">
-                        <input type="hidden" name="email" value="{{ old('email', $user->email) }}">
                         <input type="hidden" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}">
                         <input type="hidden" name="alamat" value="{{ old('alamat', $user->alamat) }}">
                         <input type="hidden" name="catatan_profil" value="{{ old('catatan_profil', $user->catatan_profil) }}">
@@ -100,7 +99,6 @@
                                 @error('nama')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
                             <input type="hidden" name="username" value="{{ old('username', $user->username) }}">
-                            <input type="hidden" name="email" value="{{ old('email', $user->email) }}">
                             <input type="hidden" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}">
                             <input type="hidden" name="alamat" value="{{ old('alamat', $user->alamat) }}">
                             <input type="hidden" name="catatan_profil" value="{{ old('catatan_profil', $user->catatan_profil) }}">
@@ -122,54 +120,12 @@
                         @method('PUT')
                         <div class="row g-2">
                             <input type="hidden" name="nama" value="{{ old('nama', $user->nama) }}">
-                            <input type="hidden" name="email" value="{{ old('email', $user->email) }}">
                             <input type="hidden" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}">
                             <input type="hidden" name="alamat" value="{{ old('alamat', $user->alamat) }}">
                             <input type="hidden" name="catatan_profil" value="{{ old('catatan_profil', $user->catatan_profil) }}">
                             <div class="col-md-8">
                                 <input type="text" name="username" value="{{ old('username', $user->username) }}" class="form-control @error('username') is-invalid @enderror">
                                 @error('username')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                            </div>
-                            <div class="col-md-4"><button type="submit" class="btn btn-spk w-100">Simpan</button></div>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="info-row">
-                    <div>
-                        <div class="small text-muted">Email</div>
-                        <div class="fw-semibold">{{ $user->email ?: 'Belum diisi' }}</div>
-                        @if($user->email)
-                        <div class="small mt-1">
-                            @if($user->hasVerifiedEmail())
-                            <span class="badge text-bg-success">Terverifikasi</span>
-                            @else
-                            <span class="badge text-bg-warning">Belum diverifikasi</span>
-                            @endif
-                        </div>
-                        @unless($user->hasVerifiedEmail())
-                        <form action="{{ route('verification.send') }}" method="POST" class="mt-2">
-                            @csrf
-                            <button type="submit" class="btn btn-sm btn-outline-success">Kirim Email Verifikasi</button>
-                        </form>
-                        @endunless
-                        @endif
-                    </div>
-                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#edit-email">Edit</button>
-                </div>
-                <div id="edit-email" class="collapse mt-3">
-                    <form action="{{ $user->isAdmin() ? route('admin.profile.update') : route('user.profile.update') }}" method="POST">
-                        @csrf
-                        @method('PUT')
-                        <div class="row g-2">
-                            <input type="hidden" name="nama" value="{{ old('nama', $user->nama) }}">
-                            <input type="hidden" name="username" value="{{ old('username', $user->username) }}">
-                            <input type="hidden" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}">
-                            <input type="hidden" name="alamat" value="{{ old('alamat', $user->alamat) }}">
-                            <input type="hidden" name="catatan_profil" value="{{ old('catatan_profil', $user->catatan_profil) }}">
-                            <div class="col-md-8">
-                                <input type="email" name="email" value="{{ old('email', $user->email) }}" class="form-control @error('email') is-invalid @enderror">
-                                @error('email')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-4"><button type="submit" class="btn btn-spk w-100">Simpan</button></div>
                         </div>
@@ -190,7 +146,6 @@
                         <div class="row g-2">
                             <input type="hidden" name="nama" value="{{ old('nama', $user->nama) }}">
                             <input type="hidden" name="username" value="{{ old('username', $user->username) }}">
-                            <input type="hidden" name="email" value="{{ old('email', $user->email) }}">
                             <input type="hidden" name="alamat" value="{{ old('alamat', $user->alamat) }}">
                             <input type="hidden" name="catatan_profil" value="{{ old('catatan_profil', $user->catatan_profil) }}">
                             <div class="col-md-8">
@@ -215,7 +170,6 @@
                         @method('PUT')
                         <input type="hidden" name="nama" value="{{ old('nama', $user->nama) }}">
                         <input type="hidden" name="username" value="{{ old('username', $user->username) }}">
-                        <input type="hidden" name="email" value="{{ old('email', $user->email) }}">
                         <input type="hidden" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}">
                         <input type="hidden" name="catatan_profil" value="{{ old('catatan_profil', $user->catatan_profil) }}">
                         <textarea name="alamat" rows="3" class="form-control @error('alamat') is-invalid @enderror">{{ old('alamat', $user->alamat) }}</textarea>
@@ -237,7 +191,6 @@
                         @method('PUT')
                         <input type="hidden" name="nama" value="{{ old('nama', $user->nama) }}">
                         <input type="hidden" name="username" value="{{ old('username', $user->username) }}">
-                        <input type="hidden" name="email" value="{{ old('email', $user->email) }}">
                         <input type="hidden" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}">
                         <input type="hidden" name="alamat" value="{{ old('alamat', $user->alamat) }}">
                         <textarea name="catatan_profil" rows="3" class="form-control @error('catatan_profil') is-invalid @enderror">{{ old('catatan_profil', $user->catatan_profil) }}</textarea>
@@ -264,7 +217,6 @@
                         @method('PUT')
                         <input type="hidden" name="nama" value="{{ old('nama', $user->nama) }}">
                         <input type="hidden" name="username" value="{{ old('username', $user->username) }}">
-                        <input type="hidden" name="email" value="{{ old('email', $user->email) }}">
                         <input type="hidden" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}">
                         <input type="hidden" name="alamat" value="{{ old('alamat', $user->alamat) }}">
                         <input type="hidden" name="catatan_profil" value="{{ old('catatan_profil', $user->catatan_profil) }}">
