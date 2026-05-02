@@ -65,11 +65,11 @@ class ProfileController extends Controller
 
     public function sendVerificationEmail(Request $request)
     {
-        return back()->withErrors(['email' => 'Fitur email telah dinonaktifkan.']);
+        return back()->withErrors(['profile' => 'Fitur email telah dinonaktifkan.']);
     }
 
     public function verifyEmail(Request $request)
     {
-        return redirect()->route('user.profile.edit')->withErrors(['email' => 'Fitur verifikasi email telah dinonaktifkan.']);
+        return redirect()->route('user.profile.edit')->withErrors(['profile' => 'Fitur verifikasi email telah dinonaktifkan.']);
     }
 }

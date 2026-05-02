@@ -22,7 +22,7 @@
                     @forelse($users as $user)
                     <tr>
                         <td>{{ $user->nama }}</td>
-                        <td>{{ $user->no_telp ?: '-' }}</td>
+                        <td>-</td>
                         <td>{{ $user->rekomendasi_count }} riwayat</td>
                         <td>{{ optional($user->created_at)->format('d M Y H:i') }}</td>
                         <td class="text-end">

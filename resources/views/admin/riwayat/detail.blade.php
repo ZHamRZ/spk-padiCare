@@ -10,7 +10,6 @@
         <div class="row g-3">
             <div class="col-md-6">
                 <p class="mb-2"><strong>Pengguna:</strong> {{ $rekomendasi->user->nama ?? '-' }}</p>
-                <p class="mb-2"><strong>No. HP:</strong> {{ $rekomendasi->user->no_telp ?? '-' }}</p>
                 <p class="mb-2"><strong>Penyakit:</strong> {{ $rekomendasi->penyakit->nama ?? '-' }}</p>
                 @if($rekomendasi->preferensi_label)
                 <p class="mb-0"><strong>Prioritas pengguna:</strong> {{ $rekomendasi->preferensi_label }}</p>

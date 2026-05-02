@@ -17,9 +17,9 @@ class DatabaseSeeder extends Seeder
     {
         // ── USERS ────────────────────────────────────────────
         User::insert([
-            ['nama' => 'Administrator',  'username' => 'admin',      'password' => Hash::make('admin123'),   'role' => 'admin',  'no_telp' => '628123450000', 'created_at' => now(), 'updated_at' => now()],
-            ['nama' => 'H. Badaruddin',  'username' => 'badaruddin', 'password' => Hash::make('petani123'),  'role' => 'petani', 'no_telp' => '628123450001', 'created_at' => now(), 'updated_at' => now()],
-            ['nama' => 'Diana Lestari',  'username' => 'diana',      'password' => Hash::make('petani123'),  'role' => 'petani', 'no_telp' => '628123450002', 'created_at' => now(), 'updated_at' => now()],
+            ['nama' => 'Administrator',  'username' => 'admin',      'password' => Hash::make('admin123'),   'role' => 'admin',  'created_at' => now(), 'updated_at' => now()],
+            ['nama' => 'H. Badaruddin',  'username' => 'badaruddin', 'password' => Hash::make('petani123'),  'role' => 'petani', 'created_at' => now(), 'updated_at' => now()],
+            ['nama' => 'Diana Lestari',  'username' => 'diana',      'password' => Hash::make('petani123'),  'role' => 'petani', 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         // ── PENYAKIT ──────────────────────────────────────────

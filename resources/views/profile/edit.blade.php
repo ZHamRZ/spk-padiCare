@@ -66,7 +66,6 @@
                         @method('PUT')
                         <input type="hidden" name="nama" value="{{ old('nama', $user->nama) }}">
                         <input type="hidden" name="username" value="{{ old('username', $user->username) }}">
-                        <input type="hidden" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}">
                         <input type="hidden" name="alamat" value="{{ old('alamat', $user->alamat) }}">
                         <input type="hidden" name="catatan_profil" value="{{ old('catatan_profil', $user->catatan_profil) }}">
                         <input type="file" name="foto_profil" class="form-control @error('foto_profil') is-invalid @enderror">
@@ -99,7 +98,6 @@
                                 @error('nama')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
                             <input type="hidden" name="username" value="{{ old('username', $user->username) }}">
-                            <input type="hidden" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}">
                             <input type="hidden" name="alamat" value="{{ old('alamat', $user->alamat) }}">
                             <input type="hidden" name="catatan_profil" value="{{ old('catatan_profil', $user->catatan_profil) }}">
                             <div class="col-md-4"><button type="submit" class="btn btn-spk w-100">Simpan</button></div>
@@ -120,7 +118,6 @@
                         @method('PUT')
                         <div class="row g-2">
                             <input type="hidden" name="nama" value="{{ old('nama', $user->nama) }}">
-                            <input type="hidden" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}">
                             <input type="hidden" name="alamat" value="{{ old('alamat', $user->alamat) }}">
                             <input type="hidden" name="catatan_profil" value="{{ old('catatan_profil', $user->catatan_profil) }}">
                             <div class="col-md-8">
@@ -135,7 +132,6 @@
                 <div class="info-row">
                     <div>
                         <div class="small text-muted">No. Telepon</div>
-                        <div class="fw-semibold">{{ $user->no_telp ?: 'Belum diisi' }}</div>
                     </div>
                     <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#edit-telp">Edit</button>
                 </div>
@@ -149,8 +145,6 @@
                             <input type="hidden" name="alamat" value="{{ old('alamat', $user->alamat) }}">
                             <input type="hidden" name="catatan_profil" value="{{ old('catatan_profil', $user->catatan_profil) }}">
                             <div class="col-md-8">
-                                <input type="text" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}" class="form-control @error('no_telp') is-invalid @enderror" placeholder="Contoh: 081234567890">
-                                @error('no_telp')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-4"><button type="submit" class="btn btn-spk w-100">Simpan</button></div>
                         </div>
@@ -170,7 +164,6 @@
                         @method('PUT')
                         <input type="hidden" name="nama" value="{{ old('nama', $user->nama) }}">
                         <input type="hidden" name="username" value="{{ old('username', $user->username) }}">
-                        <input type="hidden" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}">
                         <input type="hidden" name="catatan_profil" value="{{ old('catatan_profil', $user->catatan_profil) }}">
                         <textarea name="alamat" rows="3" class="form-control @error('alamat') is-invalid @enderror">{{ old('alamat', $user->alamat) }}</textarea>
                         @error('alamat')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
@@ -191,7 +184,6 @@
                         @method('PUT')
                         <input type="hidden" name="nama" value="{{ old('nama', $user->nama) }}">
                         <input type="hidden" name="username" value="{{ old('username', $user->username) }}">
-                        <input type="hidden" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}">
                         <input type="hidden" name="alamat" value="{{ old('alamat', $user->alamat) }}">
                         <textarea name="catatan_profil" rows="3" class="form-control @error('catatan_profil') is-invalid @enderror">{{ old('catatan_profil', $user->catatan_profil) }}</textarea>
                         @error('catatan_profil')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
@@ -217,7 +209,6 @@
                         @method('PUT')
                         <input type="hidden" name="nama" value="{{ old('nama', $user->nama) }}">
                         <input type="hidden" name="username" value="{{ old('username', $user->username) }}">
-                        <input type="hidden" name="no_telp" value="{{ old('no_telp', $user->no_telp) }}">
                         <input type="hidden" name="alamat" value="{{ old('alamat', $user->alamat) }}">
                         <input type="hidden" name="catatan_profil" value="{{ old('catatan_profil', $user->catatan_profil) }}">
                         <div class="row g-3">
