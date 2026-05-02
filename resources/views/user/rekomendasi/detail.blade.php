@@ -5,21 +5,112 @@
 
 @push('styles')
 <style>
-    .explain-hero {
-        background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+    .detail-hero {
+        background: linear-gradient(135deg, #ecfdf5 0%, #f8fafc 100%);
         border: 1px solid #bbf7d0;
-        border-radius: 22px;
+        border-radius: 24px;
     }
-
-    .reason-chip {
+    .detail-summary-card,
+    .analysis-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+    }
+    .analysis-card {
+        overflow: hidden;
+    }
+    .analysis-media,
+    .analysis-media-empty {
+        width: 100%;
+        height: 220px;
+        border-radius: 18px;
+        object-fit: cover;
+        background: #f1f5f9;
+    }
+    .analysis-media-empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #94a3b8;
+        font-size: 2rem;
+    }
+    .mini-chip {
         display: inline-flex;
         align-items: center;
+        gap: .4rem;
         padding: .35rem .7rem;
         border-radius: 999px;
         background: #f8fafc;
         color: #334155;
         border: 1px solid #e2e8f0;
-        font-size: .82rem;
+        font-size: .8rem;
+        font-weight: 600;
+    }
+    .product-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .product-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 12px;
+    }
+    .product-detail-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 12px 14px;
+        background: #f8fafc;
+    }
+    .product-detail-item.full {
+        grid-column: 1 / -1;
+    }
+    .product-detail-label {
+        font-size: .7rem;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: #64748b;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    .product-detail-value {
+        font-size: .86rem;
+        line-height: 1.5;
+        color: #0f172a;
+        word-break: break-word;
+    }
+    .linked-symptoms {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .linked-symptom {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: .4rem .7rem;
+        border-radius: 999px;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+        font-size: .76rem;
+        font-weight: 600;
+    }
+    .empty-note {
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+        padding: 18px;
+        background: #f8fafc;
+        color: #64748b;
+    }
+    @media (max-width: 767px) {
+        .analysis-media,
+        .analysis-media-empty {
+            height: 180px;
+        }
     }
 </style>
 @endpush
@@ -29,26 +120,39 @@
     use App\Support\ExpertSystemPresenter;
 
     $isPreview = $isPreview ?? false;
+    $pupukItems = $rekomendasi->detailPupuk->sortBy('peringkat')->values();
+    $pestisidaItems = $rekomendasi->detailPestisida->sortBy('peringkat')->values();
+    $topPupuk = $pupukItems->first();
+    $topPestisida = $pestisidaItems->first();
+    $topScore = max((float) ($topPupuk->nilai_vi ?? 0), (float) ($topPestisida->nilai_vi ?? 0));
+    $gejalaCocok = collect(data_get($rekomendasi, 'gejala_cocok', data_get($rekomendasi, 'preferensi_pengguna.gejala_terpilih', [])));
 @endphp
 @guest
 <div class="container py-4">
 @endguest
 
-<div class="explain-hero p-4 p-lg-5 mb-4">
+<div class="detail-hero p-4 p-lg-5 mb-4">
     <div class="row g-4 align-items-center">
         <div class="col-lg-8">
-            <span class="badge bg-success-subtle text-success border border-success-subtle mb-3">Mode Lanjutan</span>
-            <h2 class="fw-bold mb-2">Detail analisis untuk {{ $rekomendasi->penyakit->nama }}</h2>
-            <p class="text-muted mb-0">
-                Halaman ini menyajikan alasan dan detail penilaian secara lebih lengkap untuk pengguna yang ingin memeriksa proses analisis sistem pakar.
+            <span class="badge bg-success-subtle text-success border border-success-subtle mb-3">Detail Rekomendasi</span>
+            <h2 class="fw-bold mb-2">Rincian pupuk dan pestisida untuk {{ $rekomendasi->penyakit->nama }}</h2>
+            <p class="text-muted mb-3">
+                Halaman ini merangkum pilihan rekomendasi beserta informasi penggunaan, skor kecocokan, dan gejala yang paling relevan.
             </p>
+            <div class="d-flex flex-wrap gap-2">
+                @if($rekomendasi->preferensi_label)
+                <span class="mini-chip"><i class="bi bi-sliders"></i>{{ $rekomendasi->preferensi_label }}</span>
+                @endif
+                <span class="mini-chip"><i class="bi bi-graph-up-arrow"></i>{{ ExpertSystemPresenter::percent($topScore) }} kecocokan tertinggi</span>
+            </div>
         </div>
         <div class="col-lg-4">
-            <div class="bg-white rounded-4 p-4 h-100">
-                <div class="small text-muted mb-2">Pilihan utama</div>
-                <div class="mb-2"><strong>Pupuk terbaik:</strong> {{ data_get($preview, 'pupuk.0.nama', '-') }}</div>
-                <div class="mb-2"><strong>Pestisida terbaik:</strong> {{ data_get($preview, 'pestisida.0.nama', '-') }}</div>
-                <div class="small text-muted">Detail teknis disembunyikan agar tampilan utama tetap nyaman dibaca.</div>
+            <div class="detail-summary-card p-4 h-100">
+                <div class="small text-muted mb-2">Ringkasan utama</div>
+                <div class="mb-2"><strong>Pupuk terbaik:</strong> {{ optional(optional($topPupuk)->pupuk)->nama ?? '-' }}</div>
+                <div class="mb-3"><strong>Pestisida terbaik:</strong> {{ optional(optional($topPestisida)->pestisida)->nama ?? '-' }}</div>
+                <div class="small text-muted mb-2">Tingkat keyakinan</div>
+                <x-expert-system.confidence-bar :value="$topScore" />
             </div>
         </div>
     </div>
@@ -66,95 +170,136 @@
 </div>
 @endif
 
-@foreach(['pupuk' => 'Pupuk', 'pestisida' => 'Pestisida'] as $key => $label)
-<div class="card mb-4">
-    <div class="card-header">{{ $label }} yang Direkomendasikan</div>
-    <div class="card-body">
-        <div class="row g-4 mb-4">
-            @foreach($preview[$key] as $item)
-            @php
-                $alasanUtama = collect($item['detail'])
-                    ->reject(fn ($detail, $code) => in_array($code, ['BASE', 'PRESET'], true) && ($detail['impact'] ?? 0) <= 0)
-                    ->sortByDesc('impact')
-                    ->take(3);
-                $description = $key === 'pupuk'
-                    ? ExpertSystemPresenter::shortDescription(data_get($item, 'meta.fungsi_utama'), data_get($item, 'meta.efek_penggunaan'))
-                    : ExpertSystemPresenter::shortDescription(data_get($item, 'meta.fungsi'), data_get($item, 'meta.efek_penggunaan'));
-            @endphp
-            <div class="col-12">
-                <x-expert-system.result-card
-                    :type="$label"
-                    :title="$item['nama']"
-                    :code="$item['kode']"
-                    :description="$description"
-                    :score="$item['vi']"
-                    :rank="$item['peringkat']"
-                    :image-url="data_get($item, 'meta.gambar_url')"
-                    :badge="$rekomendasi->preferensi_label"
-                />
+@if($gejalaCocok->isNotEmpty())
+<div class="detail-summary-card p-4 mb-4">
+    <div class="fw-semibold mb-3">Gejala yang dipakai dalam analisis</div>
+    <div class="linked-symptoms">
+        @foreach($gejalaCocok as $gejala)
+        <span class="linked-symptom">
+            {{ data_get($gejala, 'kode') ? data_get($gejala, 'kode') . ' · ' : '' }}{{ data_get($gejala, 'nama_gejala') }}
+        </span>
+        @endforeach
+    </div>
+</div>
+@endif
 
-                <div class="mt-3">
-                    <div class="small text-muted mb-2">Faktor yang paling berpengaruh</div>
-                    <div class="d-flex flex-wrap gap-2">
-                        @foreach($alasanUtama as $detail)
-                        <span class="reason-chip">
-                            {{ $detail['kriteria'] }}: dampak {{ number_format($detail['impact'] ?? 0, 4) }}
-                        </span>
-                        @endforeach
+@foreach([
+    [
+        'key' => 'pupuk',
+        'label' => 'Pupuk',
+        'icon' => 'bi-bag-fill',
+        'iconColor' => 'text-success',
+        'empty' => 'Belum ada data pupuk yang direkomendasikan untuk gejala yang dipilih.',
+        'items' => $pupukItems,
+    ],
+    [
+        'key' => 'pestisida',
+        'label' => 'Pestisida',
+        'icon' => 'bi-shield-fill-check',
+        'iconColor' => 'text-warning',
+        'empty' => 'Belum ada data pestisida yang direkomendasikan untuk gejala yang dipilih.',
+        'items' => $pestisidaItems,
+    ],
+] as $section)
+<div class="mb-4">
+    <div class="product-section-head">
+        <div>
+            <div class="fw-bold fs-5">{{ $section['label'] }} yang Direkomendasikan</div>
+            <div class="text-muted small">Urutan sudah disusun dari skor kecocokan tertinggi.</div>
+        </div>
+        <span class="mini-chip"><i class="bi {{ $section['icon'] }} {{ $section['iconColor'] }}"></i>{{ $section['items']->count() }} item</span>
+    </div>
+
+    @if($section['items']->isEmpty())
+    <div class="empty-note">{{ $section['empty'] }}</div>
+    @else
+    <div class="row g-4">
+        @foreach($section['items'] as $item)
+        @php
+            $product = $section['key'] === 'pupuk' ? $item->pupuk : $item->pestisida;
+            $description = $section['key'] === 'pupuk'
+                ? ExpertSystemPresenter::shortDescription(optional($product)->fungsi_utama, optional($product)->efek_penggunaan)
+                : ExpertSystemPresenter::shortDescription(optional($product)->fungsi, optional($product)->efek_penggunaan);
+            $detailRows = $section['key'] === 'pupuk'
+                ? [
+                    ['label' => 'Kode', 'value' => $product->kode ?? '-'],
+                    ['label' => 'Skor', 'value' => number_format((float) ($item->nilai_vi ?? 0), 4)],
+                    ['label' => 'Takaran', 'value' => $product->takaran ?? '-'],
+                    ['label' => 'Frekuensi', 'value' => $product->frekuensi_aplikasi ?? '-'],
+                    ['label' => 'Kandungan', 'value' => $product->kandungan ?? '-'],
+                    ['label' => 'Detail Kandungan', 'value' => $product->kandungan_detail ?? '-', 'full' => true],
+                    ['label' => 'Fungsi Utama', 'value' => $product->fungsi_utama ?? '-', 'full' => true],
+                    ['label' => 'Efek Penggunaan', 'value' => $product->efek_penggunaan ?? '-', 'full' => true],
+                    ['label' => 'Cara Aplikasi', 'value' => $product->cara_aplikasi ?? '-', 'full' => true],
+                    ['label' => 'Jadwal / Umur Aplikasi', 'value' => $product->jadwal_umur_aplikasi ?? '-', 'full' => true],
+                ]
+                : [
+                    ['label' => 'Kode', 'value' => $product->kode ?? '-'],
+                    ['label' => 'Skor', 'value' => number_format((float) ($item->nilai_vi ?? 0), 4)],
+                    ['label' => 'Jenis', 'value' => $product->jenis ?? '-'],
+                    ['label' => 'Dosis', 'value' => $product->dosis ?? '-'],
+                    ['label' => 'Takaran', 'value' => $product->takaran ?? '-'],
+                    ['label' => 'Frekuensi', 'value' => $product->frekuensi_aplikasi ?? '-'],
+                    ['label' => 'Bahan Aktif', 'value' => $product->bahan_aktif ?? '-', 'full' => true],
+                    ['label' => 'Detail Kandungan', 'value' => $product->kandungan_detail ?? '-', 'full' => true],
+                    ['label' => 'Fungsi', 'value' => $product->fungsi ?? '-', 'full' => true],
+                    ['label' => 'Efek Penggunaan', 'value' => $product->efek_penggunaan ?? '-', 'full' => true],
+                    ['label' => 'Cara Aplikasi', 'value' => $product->cara_aplikasi ?? '-', 'full' => true],
+                    ['label' => 'Jadwal / Umur Aplikasi', 'value' => $product->jadwal_umur_aplikasi ?? '-', 'full' => true],
+                ];
+            $linkedSymptoms = collect($product->gejala_cocok ?? []);
+        @endphp
+        <div class="col-12">
+            <div class="analysis-card p-3 p-lg-4">
+                <div class="row g-4 align-items-start">
+                    <div class="col-lg-4">
+                        @if(optional($product)->gambar_url)
+                        <img src="{{ $product->gambar_url }}" alt="{{ $product->nama }}" class="analysis-media">
+                        @else
+                        <div class="analysis-media-empty">
+                            <i class="bi {{ $section['key'] === 'pupuk' ? 'bi-bag' : 'bi-shield' }}"></i>
+                        </div>
+                        @endif
+                    </div>
+                    <div class="col-lg-8">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                            <span class="badge bg-warning-subtle text-warning-emphasis border">#{{ $item->peringkat }}</span>
+                            <span class="badge text-bg-{{ ExpertSystemPresenter::confidenceTone($item->nilai_vi) }}">
+                                {{ ExpertSystemPresenter::confidenceLabel($item->nilai_vi) }}
+                            </span>
+                        </div>
+                        <h3 class="h5 fw-bold mb-1">{{ $product->nama ?? '-' }}</h3>
+                        <p class="text-muted mb-3">{{ $description }}</p>
+                        <div class="product-detail-grid">
+                            @foreach($detailRows as $row)
+                            <div class="product-detail-item {{ !empty($row['full']) ? 'full' : '' }}">
+                                <div class="product-detail-label">{{ $row['label'] }}</div>
+                                <div class="product-detail-value">{{ $row['value'] }}</div>
+                            </div>
+                            @endforeach
+                        </div>
+
+                        <div class="mt-4">
+                            <div class="fw-semibold mb-2">Gejala terkait</div>
+                            @if($linkedSymptoms->isNotEmpty())
+                            <div class="linked-symptoms">
+                                @foreach($linkedSymptoms as $gejala)
+                                <span class="linked-symptom">
+                                    {{ data_get($gejala, 'kode') ? data_get($gejala, 'kode') . ' · ' : '' }}{{ data_get($gejala, 'nama_gejala') }}
+                                </span>
+                                @endforeach
+                            </div>
+                            @else
+                            <div class="small text-muted">Belum ada gejala pendukung yang ditautkan pada item ini.</div>
+                            @endif
+                        </div>
                     </div>
                 </div>
-
-                <div class="mt-3">
-                    <x-expert-system.advanced-details target="detail-{{ $key }}-{{ $loop->index }}">
-                        <div class="small text-muted mb-3">
-                            Rincian ini ditampilkan untuk pengguna yang ingin melihat bagaimana sistem menyusun skor akhir setiap alternatif.
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-striped align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="min-width: 180px;">Rule</th>
-                                        <th style="min-width: 100px;">Jenis</th>
-                                        <th style="min-width: 120px;">Preferensi User</th>
-                                        <th style="min-width: 120px;">MB Tambahan</th>
-                                        <th style="min-width: 120px;">MD Tambahan</th>
-                                        <th style="min-width: 120px;">Dampak</th>
-                                        <th>Catatan</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($item['detail'] as $kode => $detail)
-                                    <tr>
-                                        <td>
-                                            <strong>{{ $kode }}</strong><br>
-                                            <span class="small text-muted">{{ Str::limit($detail['kriteria'], 60) }}</span>
-                                        </td>
-                                        <td>{{ ucfirst($detail['jenis'] ?? '-') }}</td>
-                                        <td>{{ is_null($detail['preferensi_user'] ?? null) ? '-' : ($detail['preferensi_user'] . '%') }}</td>
-                                        <td>{{ number_format((float) ($detail['mb_bonus'] ?? 0), 4) }}</td>
-                                        <td>{{ number_format((float) ($detail['md_bonus'] ?? 0), 4) }}</td>
-                                        <td>
-                                            <span class="{{ (($detail['impact'] ?? 0) >= 0) ? 'text-success' : 'text-danger' }}">
-                                                {{ number_format((float) ($detail['impact'] ?? 0), 4) }}
-                                            </span>
-                                        </td>
-                                        <td class="small text-muted">{{ Str::limit($detail['catatan'] ?? '-', 50) }}</td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="small text-muted mt-3">
-                            CF dasar: {{ number_format(data_get($item, 'cf_meta.cf_awal', 0), 4) }},
-                            CF akhir: {{ number_format(data_get($item, 'cf_meta.cf_akhir', $item['vi']), 4) }}.
-                            Preferensi pengguna menyesuaikan MB dan MD, bukan lagi memakai bobot SAW.
-                        </div>
-                    </x-expert-system.advanced-details>
-                </div>
             </div>
-            @endforeach
         </div>
+        @endforeach
     </div>
+    @endif
 </div>
 @endforeach
 
@@ -163,7 +308,7 @@
     <a href="{{ route('login') }}" class="btn btn-outline-success">Login untuk Simpan Hasil</a>
     <a href="{{ route('user.diagnosis.index') }}" class="btn btn-spk">Diagnosis Lagi</a>
     @else
-    <a href="{{ route('user.riwayat.index') }}" class="btn btn-spk">Buka Riwayat</a>
+    <a href="{{ route('user.riwayat.index') }}" class="btn btn-outline-secondary">Buka Riwayat</a>
     @endif
 </div>
 @guest

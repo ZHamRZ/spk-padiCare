@@ -1,3 +1,19 @@
-```
+# Environment
 .env
-```
+.env.*
+
+# Dependencies
+/vendor
+/node_modules
+
+# Database
+*.sql
+
+# IDE
+.vscode/
+
+# Cache / test
+.phpunit.result.cache
+
+# Logs
+*.log

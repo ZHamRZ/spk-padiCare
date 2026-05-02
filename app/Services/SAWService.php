@@ -260,10 +260,6 @@ class SAWService
                 'label' => 'Efisiensi Tinggi',
                 'description' => 'Mendorong alternatif yang paling kuat berdasarkan keyakinan dasar pakar.',
             ],
-            'custom' => [
-                'label' => 'Atur Sendiri',
-                'description' => 'Preferensi ini akan mempengaruhi rekomendasi berdasarkan pengetahuan pakar.',
-            ],
         ];
     }
 
@@ -535,7 +531,7 @@ class SAWService
     {
         return match ($preset) {
             'efektif' => 'efisiensi',
-            'aman' => 'custom',
+            'aman', 'custom' => 'seimbang',
             default => $preset,
         };
     }
@@ -547,7 +543,6 @@ class SAWService
         return match ($preset) {
             'hemat' => $label === 'Murah' ? 90 : 45,
             'efisiensi' => $label === 'Efektif' ? 90 : ($label === 'Aman' ? 70 : 50),
-            'custom' => 60,
             default => 60,
         };
     }

@@ -421,6 +421,13 @@
         gap: 20px;
         margin-bottom: 24px;
     }
+    .product-empty-state {
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        padding: 20px;
+        color: #64748b;
+    }
     .product-grid-wrapper.mb-4 {
         margin-bottom: 0 !important;
     }
@@ -539,12 +546,18 @@
     $sortedPestisida = $rekomendasi->detailPestisida->sortBy('peringkat')->values();
     $topPupuk = $sortedPupuk->first();
     $topPestisida = $sortedPestisida->first();
-    $pupukThreshold = max(0.6, (float) ($topPupuk->nilai_vi ?? 0) - 0.1);
-    $pestisidaThreshold = max(0.6, (float) ($topPestisida->nilai_vi ?? 0) - 0.1);
+    $pupukThreshold = max(0.1, (float) ($topPupuk->nilai_vi ?? 0) - 0.15);
+    $pestisidaThreshold = max(0.1, (float) ($topPestisida->nilai_vi ?? 0) - 0.15);
     $recommendedPupuk = $sortedPupuk
         ->filter(fn ($item) => (float) ($item->nilai_vi ?? 0) >= $pupukThreshold)->values();
     $recommendedPestisida = $sortedPestisida
         ->filter(fn ($item) => (float) ($item->nilai_vi ?? 0) >= $pestisidaThreshold)->values();
+    if ($recommendedPupuk->isEmpty()) {
+        $recommendedPupuk = $sortedPupuk;
+    }
+    if ($recommendedPestisida->isEmpty()) {
+        $recommendedPestisida = $sortedPestisida;
+    }
     $topScore = max((float) ($topPupuk->nilai_vi ?? 0), (float) ($topPestisida->nilai_vi ?? 0));
 @endphp
 
@@ -733,9 +746,13 @@
                                 @endif
                             </div>
                         </details>
-                    </div>
                 </div>
                 @endforeach
+            </div>
+            @else
+            <div class="product-empty-state mb-4">
+                <div class="fw-semibold mb-1">Data pupuk belum tersedia</div>
+                <div class="small mb-0">Belum ada pupuk dengan kecocokan positif dari gejala yang dipilih pada analisis ini.</div>
             </div>
             @endif
 
@@ -796,6 +813,7 @@
                                     {{ ExpertSystemPresenter::confidenceLabel($item->nilai_vi) }}
                                 </span>
                             </div>
+                        </div>
 
                         {{-- Detail Toggle --}}
                         <details class="detail-toggle">
@@ -812,9 +830,12 @@
                                     <div class="detail-row"><div class="dl">Kode</div><div class="dv">{{ $item->pestisida->kode ?? '-' }}</div></div>
                                     <div class="detail-row"><div class="dl">Peringkat</div><div class="dv">#{{ $item->peringkat ?? '-' }}</div></div>
                                     <div class="detail-row"><div class="dl">Skor</div><div class="dv">{{ number_format((float) $item->nilai_vi, 4) }}</div></div>
+                                    <div class="detail-row"><div class="dl">Jenis</div><div class="dv">{{ $item->pestisida->jenis ?? '-' }}</div></div>
                                     <div class="detail-row"><div class="dl">Dosis</div><div class="dv">{{ $item->pestisida->dosis ?? '-' }}</div></div>
+                                    <div class="detail-row"><div class="dl">Takaran</div><div class="dv">{{ $item->pestisida->takaran ?? '-' }}</div></div>
                                     <div class="detail-row"><div class="dl">Frekuensi</div><div class="dv">{{ $item->pestisida->frekuensi_aplikasi ?? '-' }}</div></div>
                                     <div class="detail-row span2"><div class="dl">Bahan Aktif</div><div class="dv">{{ $item->pestisida->bahan_aktif ?? '-' }}</div></div>
+                                    <div class="detail-row span2"><div class="dl">Detail Kandungan</div><div class="dv">{{ $item->pestisida->kandungan_detail ?? '-' }}</div></div>
                                     <div class="detail-row span2"><div class="dl">Fungsi</div><div class="dv">{{ $item->pestisida->fungsi ?? '-' }}</div></div>
                                     <div class="detail-row span2"><div class="dl">Efek Penggunaan</div><div class="dv">{{ $item->pestisida->efek_penggunaan ?? '-' }}</div></div>
                                     <div class="detail-row span2"><div class="dl">Cara Aplikasi</div><div class="dv">{{ $item->pestisida->cara_aplikasi ?? '-' }}</div></div>
@@ -838,10 +859,14 @@
                                 @endif
                             </div>
                         </details>
-                    </div>
                 </div>
                 @endforeach
             </div>{{-- end product-grid-wrapper --}}
+            @else
+            <div class="product-empty-state">
+                <div class="fw-semibold mb-1">Data pestisida belum tersedia</div>
+                <div class="small mb-0">Belum ada pestisida dengan kecocokan positif dari gejala yang dipilih pada analisis ini.</div>
+            </div>
             @endif
 
         </div>{{-- end right col --}}

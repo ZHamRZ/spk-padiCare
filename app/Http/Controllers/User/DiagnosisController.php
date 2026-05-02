@@ -4,7 +4,6 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Gejala;
-use App\Models\Kriteria;
 use App\Models\Penyakit;
 use App\Services\DiagnosisService;
 use App\Services\RecommendationService;
@@ -88,13 +87,11 @@ class DiagnosisController extends Controller
         }
 
         $gejalaInput = Gejala::whereIn('id', $payload['gejala_ids'] ?? [])->get();
-        $kriteria = Kriteria::orderBy('kode')->get();
         $presetPreferensi = $this->recommendationService->getPreferencePresets();
 
         return view('user.diagnosis.hasil', [
             'skorPenyakit' => $payload['skorPenyakit'] ?? [],
             'gejalaInput' => $gejalaInput,
-            'kriteria' => $kriteria,
             'presetPreferensi' => $presetPreferensi,
             'diagnosisSummary' => $payload['summary'] ?? [],
         ]);
@@ -107,11 +104,9 @@ class DiagnosisController extends Controller
             'id_penyakit.*' => 'exists:penyakit,id',
             'gejala_terpilih' => 'required|array|min:1',
             'gejala_terpilih.*' => 'exists:gejala,id',
-            'preferensi_tipe' => 'required|string|in:seimbang,hemat,efisiensi,custom,efektif,aman',
+            'preferensi_tipe' => 'required|string|in:seimbang,hemat,efisiensi',
             'preferensi_alasan' => 'nullable|string|max:150',
             'preferensi_catatan' => 'nullable|string|max:500',
-            'preferensi_kriteria' => 'nullable|array',
-            'preferensi_kriteria.*' => 'nullable|integer|min:0|max:100',
         ], [
             'id_penyakit.required' => 'Hasil identifikasi belum siap diproses. Silakan ulangi identifikasi lalu coba lihat rekomendasi lagi.',
             'id_penyakit.*.exists' => 'Penyakit hasil identifikasi tidak ditemukan. Silakan ulangi identifikasi.',
@@ -144,7 +139,6 @@ class DiagnosisController extends Controller
             'alasan' => $request->preferensi_alasan,
             'catatan' => $request->preferensi_catatan,
             'gejala_terpilih' => $gejalaTerpilih,
-            'kriteria' => $request->input('preferensi_kriteria', []),
             'gejala_weights' => $gejalaWeights,
         ];
 
@@ -165,7 +159,7 @@ class DiagnosisController extends Controller
                 $preview = $this->recommendationService->calculateWithPreferences(
                     $idPenyakit,
                     $request->preferensi_tipe,
-                    $request->input('preferensi_kriteria', []),
+                    [],
                     $gejalaWeights
                 );
                 
@@ -182,7 +176,6 @@ class DiagnosisController extends Controller
                         'alasan' => $request->preferensi_alasan,
                         'catatan' => $request->preferensi_catatan,
                         'gejala_terpilih' => $gejalaTerpilih,
-                        'kriteria' => $preferensi['kriteria'],
                         'gejala_weights' => $gejalaWeights,
                     ],
                     'preview' => $preview,

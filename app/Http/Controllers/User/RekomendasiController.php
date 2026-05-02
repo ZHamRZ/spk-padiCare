@@ -235,12 +235,12 @@ class RekomendasiController extends Controller
     {
         return $items->map(function (array $item) use ($type) {
             // Gunakan cf_rekomendasi atau cf_percentage sebagai nilai_vi
-            $cfValue = data_get($item, 'cf_rekomendasi', 0);
-            $cfPercentage = data_get($item, 'cf_percentage', 0);
+            $cfValue = (float) data_get($item, 'cf_rekomendasi', data_get($item, 'vi', 0));
+            $cfPercentage = (float) data_get($item, 'cf_percentage', 0);
             
             $productData = [
-                'kode' => $item['kode'],
-                'nama' => $item['nama'],
+                'kode' => data_get($item, 'kode'),
+                'nama' => data_get($item, 'nama'),
                 'gambar_url' => data_get($item, 'gambar_url'),
                 'gejala_cocok' => collect(data_get($item, 'symptom_details', []))->map(function ($symptom) {
                     return [
@@ -260,25 +260,28 @@ class RekomendasiController extends Controller
                     'takaran' => data_get($item, 'takaran'),
                     'efek_penggunaan' => data_get($item, 'efek_penggunaan'),
                     'cara_aplikasi' => data_get($item, 'cara_aplikasi'),
-                    'jadwal_umur_aplikasi' => null, // Tidak ada di pupuk
-                    'frekuensi_aplikasi' => null, // Tidak ada di pupuk
+                    'jadwal_umur_aplikasi' => data_get($item, 'jadwal_umur_aplikasi'),
+                    'frekuensi_aplikasi' => data_get($item, 'frekuensi_aplikasi'),
                 ]);
             } 
             // Tambahkan field spesifik pestisida
             else {
                 $productData = array_merge($productData, [
+                    'jenis' => data_get($item, 'jenis'),
                     'bahan_aktif' => data_get($item, 'bahan_aktif'),
+                    'kandungan_detail' => data_get($item, 'kandungan_detail'),
                     'fungsi' => data_get($item, 'fungsi'),
                     'dosis' => data_get($item, 'dosis'),
+                    'takaran' => data_get($item, 'takaran'),
                     'efek_penggunaan' => data_get($item, 'efek_penggunaan'),
                     'cara_aplikasi' => data_get($item, 'cara_aplikasi'),
-                    'jadwal_umur_aplikasi' => null, // Tidak ada di pestisida
-                    'frekuensi_aplikasi' => null, // Tidak ada di pestisida
+                    'jadwal_umur_aplikasi' => data_get($item, 'jadwal_umur_aplikasi'),
+                    'frekuensi_aplikasi' => data_get($item, 'frekuensi_aplikasi'),
                 ]);
             }
             
             return (object) [
-                'peringkat' => $item['peringkat'],
+                'peringkat' => (int) data_get($item, 'peringkat', 0),
                 'nilai_vi' => $cfValue,
                 'cf_percentage' => $cfPercentage,
                 'adjustment_info' => [],

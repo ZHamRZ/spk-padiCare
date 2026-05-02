@@ -218,7 +218,6 @@ class RecommendationService
             'hemat' => 'Preferensi ini memprioritaskan alternatif dengan biaya lebih rendah.',
             'efisiensi' => 'Preferensi ini memperkuat alternatif dengan keyakinan pakar tertinggi.',
             'seimbang' => 'Preferensi ini memberikan penyesuaian moderat untuk semua alternatif.',
-            'custom' => 'Preferensi custom berdasarkan bobot kriteria yang Anda tentukan.',
             default => 'Preferensi standar dengan penyesuaian minimal.',
         };
     }

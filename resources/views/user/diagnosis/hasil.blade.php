@@ -6,16 +6,6 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Preset radio toggle
-        document.querySelectorAll('.preset-radio').forEach((radio) => {
-            radio.addEventListener('change', () => {
-                const target = radio.dataset.target;
-                const wrapper = document.getElementById(target);
-                if (!wrapper) return;
-                wrapper.classList.toggle('d-none', radio.value !== 'custom');
-            });
-        });
-
         // Animate confidence bar on load
         const bars = document.querySelectorAll('.conf-bar-fill');
         bars.forEach(bar => {
@@ -885,12 +875,12 @@
 
                 <div class="col-md-4 col-lg-12">
                     <div class="tip-item h-100">
-                        <div class="tip-icon">🎛️</div>
+                        <div class="tip-icon">⚖️</div>
                         <div style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700; color:var(--slate-700); margin-bottom:4px;">
-                            Custom
+                            Seimbang
                         </div>
                         <div style="font-size:13px; color:var(--slate-500); line-height:1.6;">
-                            Atur sendiri bobot pengaruh murah, efektif, dan aman secara terpisah.
+                            Cocok jika petani ingin hasil yang aman dipakai tanpa perlu mengatur detail tambahan.
                         </div>
                     </div>
                 </div>
@@ -909,20 +899,19 @@
             </div>
 
             <div style="font-size:13px; color:var(--slate-400); margin-bottom:20px;">
-                Preferensi ini menyesuaikan nilai keyakinan pada setiap alternatif rekomendasi.
+                Pilih salah satu prioritas yang paling sesuai. Sistem akan menyesuaikan nilai keyakinan rekomendasi secara otomatis.
             </div>
 
             {{-- Preset --}}
             <div class="row g-3 mb-4">
                 @foreach($presetPreferensi as $key => $preset)
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="preference-option p-3 h-100">
                         <div class="d-flex align-items-start gap-2">
                             <input class="form-check-input flex-shrink-0 mt-1 preset-radio"
                                    type="radio"
                                    name="preferensi_tipe"
                                    value="{{ $key }}"
-                                   data-target="custom-priority"
                                    {{ old('preferensi_tipe', 'seimbang') === $key ? 'checked' : '' }}>
 
                             <div>
@@ -959,50 +948,6 @@
                            placeholder="cth: anggaran lapangan terbatas">
                 </div>
             </div>
-
-            {{-- Custom --}}
-            <div id="custom-priority" class="{{ old('preferensi_tipe', 'seimbang') === 'custom' ? '' : 'd-none' }}">
-
-                <div class="form-divider"></div>
-
-                <div style="font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:13px; color:var(--slate-600); margin-bottom:12px; text-transform:uppercase;">
-                    Atur bobot preferensi
-                </div>
-
-                <div class="row g-3">
-                    @foreach($kriteria as $kriteriaItem)
-                    @php
-                        $nama = strtolower($kriteriaItem->nama . ' ' . ($kriteriaItem->keterangan ?? ''));
-                        $label = str_contains($nama, 'harga') || str_contains($nama, 'biaya') ? 'Murah'
-                            : (str_contains($nama, 'efektif') ? 'Efektif'
-                            : (str_contains($nama, 'aman') ? 'Aman' : $kriteriaItem->nama));
-                        $icon = $label === 'Murah' ? '💰' : ($label === 'Efektif' ? '⚡' : '🌱');
-                        $currentValue = (int) old("preferensi_kriteria.{$kriteriaItem->id}", 60);
-                    @endphp
-
-                    <div class="col-md-4">
-                        <div class="custom-criteria-card p-3 h-100">
-                            <div style="font-weight:700; margin-bottom:10px;">
-                                {{ $icon }} {{ $label }}
-                            </div>
-
-                            <select name="preferensi_kriteria[{{ $kriteriaItem->id }}]"
-                                    class="criteria-level-select mb-2">
-                                <option value="90" {{ $currentValue === 90 ? 'selected' : '' }}>Tinggi</option>
-                                <option value="60" {{ $currentValue === 60 ? 'selected' : '' }}>Sedang</option>
-                                <option value="30" {{ $currentValue === 30 ? 'selected' : '' }}>Rendah</option>
-                            </select>
-
-                            <div style="font-size:11px; color:var(--slate-400);">
-                                {{ $kriteriaItem->kode }} · {{ $kriteriaItem->nama }}
-                            </div>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-
-            </div>
-
         </div>
     </div>
 

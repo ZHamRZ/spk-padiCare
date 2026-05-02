@@ -83,7 +83,7 @@
                 <div class="card-header">Panduan Parameter</div>
                 <div class="card-body">
                     <div class="display-6 fw-bold text-success">{{ number_format($averageBobot, 2) }}</div>
-                    <p class="text-muted">Nilai ini menunjukkan rata-rata faktor dasar yang dipakai saat pengguna memilih prioritas atau mode custom.</p>
+                    <p class="text-muted">Nilai ini menunjukkan rata-rata faktor dasar yang dipakai saat pengguna memilih prioritas seimbang, hemat biaya, atau efisiensi tinggi.</p>
                     <div class="alert alert-info">
                         Pada pendekatan CF, parameter ini dipakai sebagai dasar pengaruh rule saat sistem menyesuaikan rekomendasi dengan prioritas pengguna.
                     </div>
