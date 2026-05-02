@@ -932,15 +932,7 @@
 
             {{-- Input tambahan --}}
             <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                    <label class="form-label">Alasan utama</label>
-                    <input type="text" name="preferensi_alasan"
-                           value="{{ old('preferensi_alasan') }}"
-                           class="form-control"
-                           placeholder="cth: ingin penanganan cepat">
-                </div>
-
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <label class="form-label">Catatan tambahan</label>
                     <input type="text" name="preferensi_catatan"
                            value="{{ old('preferensi_catatan') }}"

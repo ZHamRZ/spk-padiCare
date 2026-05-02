@@ -92,6 +92,22 @@
     </style>
 </head>
 <body>
+    @php
+        $formatCurrency = static function ($value) {
+            return is_numeric($value) && (float) $value > 0
+                ? 'Rp ' . number_format((float) $value, 0, ',', '.')
+                : '-';
+        };
+        $formatUnitPrice = static function ($value, $unit = null) use ($formatCurrency) {
+            $formatted = $formatCurrency($value);
+
+            if ($formatted === '-') {
+                return '-';
+            }
+
+            return trim($formatted . ($unit ? ' / ' . $unit : ''));
+        };
+    @endphp
     <div class="toolbar">
         <button class="btn btn-print" type="button" onclick="window.print()">Cetak / Simpan PDF</button>
         <a class="btn btn-download" href="{{ route('user.rekomendasi.preview.cetak', ['download' => 1]) }}">Download HTML</a>
@@ -108,14 +124,20 @@
         $sortedPestisida = $rekomendasi->detailPestisida->sortBy('peringkat')->values();
         $topPupuk = $sortedPupuk->first();
         $topPestisida = $sortedPestisida->first();
-        $pupukThreshold = max(0.6, (float) ($topPupuk->nilai_vi ?? 0) - 0.1);
-        $pestisidaThreshold = max(0.6, (float) ($topPestisida->nilai_vi ?? 0) - 0.1);
+        $pupukThreshold = max(0.1, (float) ($topPupuk->nilai_vi ?? 0) - 0.15);
+        $pestisidaThreshold = max(0.1, (float) ($topPestisida->nilai_vi ?? 0) - 0.15);
         $recommendedPupuk = $sortedPupuk
             ->filter(fn ($item) => (float) ($item->nilai_vi ?? 0) >= $pupukThreshold)
             ->values();
         $recommendedPestisida = $sortedPestisida
             ->filter(fn ($item) => (float) ($item->nilai_vi ?? 0) >= $pestisidaThreshold)
             ->values();
+        if ($recommendedPupuk->isEmpty()) {
+            $recommendedPupuk = $sortedPupuk;
+        }
+        if ($recommendedPestisida->isEmpty()) {
+            $recommendedPestisida = $sortedPestisida;
+        }
     @endphp
     <div class="report-card">
         <h2>{{ $rekomendasi->penyakit->nama ?? '-' }}</h2>
@@ -142,17 +164,12 @@
                 <div class="detail-box">
                     <h4>{{ $item->pupuk->nama ?? '-' }}</h4>
                     <div class="detail-list">
-                        <p><strong>Kode</strong> {{ $item->pupuk->kode ?? '-' }}</p>
                         <p><strong>Peringkat</strong> {{ $item->peringkat ?? '-' }}</p>
-                        <p><strong>Skor</strong> {{ number_format((float) $item->nilai_vi, 4) }}</p>
-                        <p><strong>Kandungan</strong> {{ $item->pupuk->kandungan ?? '-' }}</p>
-                        <p><strong>Detail</strong> {{ $item->pupuk->kandungan_detail ?? '-' }}</p>
+                        <p><strong>Detail Kandungan</strong> {{ $item->pupuk->kandungan_detail ?? '-' }}</p>
+                        <p><strong>Harga per Satuan</strong> {{ $formatUnitPrice($item->pupuk->harga_per_kg ?? null, $item->pupuk->satuan ?? 'kg') }}</p>
                         <p><strong>Fungsi</strong> {{ $item->pupuk->fungsi_utama ?? '-' }}</p>
-                        <p><strong>Takaran</strong> {{ $item->pupuk->takaran ?? '-' }}</p>
-                        <p><strong>Efek</strong> {{ $item->pupuk->efek_penggunaan ?? '-' }}</p>
-                        <p><strong>Cara</strong> {{ $item->pupuk->cara_aplikasi ?? '-' }}</p>
-                        <p><strong>Jadwal</strong> {{ $item->pupuk->jadwal_umur_aplikasi ?? '-' }}</p>
-                        <p><strong>Frekuensi</strong> {{ $item->pupuk->frekuensi_aplikasi ?? '-' }}</p>
+                        <p><strong>Efek Penggunaan</strong> {{ $item->pupuk->efek_penggunaan ?? '-' }}</p>
+                        <p><strong>Frekuensi Aplikasi</strong> {{ $item->pupuk->frekuensi_aplikasi ?? '-' }}</p>
                     </div>
                 </div>
                 @endforeach
@@ -166,16 +183,14 @@
                 <div class="detail-box">
                     <h4>{{ $item->pestisida->nama ?? '-' }}</h4>
                     <div class="detail-list">
-                        <p><strong>Kode</strong> {{ $item->pestisida->kode ?? '-' }}</p>
                         <p><strong>Peringkat</strong> {{ $item->peringkat ?? '-' }}</p>
-                        <p><strong>Skor</strong> {{ number_format((float) $item->nilai_vi, 4) }}</p>
-                        <p><strong>Bahan aktif</strong> {{ $item->pestisida->bahan_aktif ?? '-' }}</p>
+                        <p><strong>Detail Kandungan</strong> {{ $item->pestisida->kandungan_detail ?? '-' }}</p>
                         <p><strong>Fungsi</strong> {{ $item->pestisida->fungsi ?? '-' }}</p>
-                        <p><strong>Dosis</strong> {{ $item->pestisida->dosis ?? '-' }}</p>
-                        <p><strong>Efek</strong> {{ $item->pestisida->efek_penggunaan ?? '-' }}</p>
-                        <p><strong>Cara</strong> {{ $item->pestisida->cara_aplikasi ?? '-' }}</p>
-                        <p><strong>Jadwal</strong> {{ $item->pestisida->jadwal_umur_aplikasi ?? '-' }}</p>
-                        <p><strong>Frekuensi</strong> {{ $item->pestisida->frekuensi_aplikasi ?? '-' }}</p>
+                        <p><strong>Dosis Singkat</strong> {{ $item->pestisida->dosis ?? '-' }}</p>
+                        <p><strong>Satuan Harga</strong> {{ $formatUnitPrice($item->pestisida->harga ?? null, $item->pestisida->satuan_harga ?? null) }}</p>
+                        <p><strong>Efek Penggunaan</strong> {{ $item->pestisida->efek_penggunaan ?? '-' }}</p>
+                        <p><strong>Cara Aplikasi</strong> {{ $item->pestisida->cara_aplikasi ?? '-' }}</p>
+                        <p><strong>Frekuensi Aplikasi</strong> {{ $item->pestisida->frekuensi_aplikasi ?? '-' }}</p>
                     </div>
                 </div>
                 @endforeach

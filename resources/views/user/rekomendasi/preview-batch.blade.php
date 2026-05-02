@@ -127,7 +127,7 @@
         background: #e2e8f0;
     }
 
-    /* ── Product Cards (Pupuk & Pestisida) ─────────── */
+    /* ── Product Cards ─────────────────────────────── */
     .product-card {
         border: 1px solid #e2e8f0;
         border-radius: 14px;
@@ -136,7 +136,8 @@
         transition: box-shadow .2s ease, transform .2s ease;
         display: flex;
         flex-direction: column;
-        height: 100%;
+        height: auto;
+        align-self: start;
         margin-bottom: 0;
     }
     .product-card:hover {
@@ -261,7 +262,7 @@
         border-radius: 0 0 12px 12px;
     }
     .detail-toggle summary::-webkit-details-marker { display: none; }
-    .detail-toggle summary:hover { 
+    .detail-toggle summary:hover {
         background: linear-gradient(to right, #dcfce7, #f0fdf4);
         padding-left: 18px;
     }
@@ -298,17 +299,9 @@
         overflow-y: auto;
         padding: 14px;
     }
-    .detail-panel::-webkit-scrollbar {
-        width: 5px;
-    }
-    .detail-panel::-webkit-scrollbar-track {
-        background: #e2e8f0;
-        border-radius: 3px;
-    }
-    .detail-panel::-webkit-scrollbar-thumb {
-        background: #94a3b8;
-        border-radius: 3px;
-    }
+    .detail-panel::-webkit-scrollbar { width: 5px; }
+    .detail-panel::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 3px; }
+    .detail-panel::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
     .detail-list {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -331,13 +324,13 @@
         box-shadow: 0 2px 6px rgba(22, 163, 74, 0.1);
         transform: translateY(-1px);
     }
-    .detail-row.full { grid-column: 1 / -1; }
+    .detail-row.full  { grid-column: 1 / -1; }
     .detail-row.span2 { grid-column: span 2; }
-    .detail-row .dl { 
-        font-size: .68rem; 
-        color: #64748b; 
-        font-weight: 700; 
-        text-transform: uppercase; 
+    .detail-row .dl {
+        font-size: .68rem;
+        color: #64748b;
+        font-weight: 700;
+        text-transform: uppercase;
         letter-spacing: 0.05em;
         display: flex;
         align-items: center;
@@ -352,34 +345,24 @@
         border-radius: 50%;
         flex-shrink: 0;
     }
-    .detail-row .dv { 
-        font-size: .8rem; 
-        color: #1e293b; 
-        font-weight: 500; 
+    .detail-row .dv {
+        font-size: .8rem;
+        color: #1e293b;
+        font-weight: 500;
         word-break: break-word;
         line-height: 1.4;
-        display: -webkit-box; 
-        -webkit-line-clamp: 3; 
-        -webkit-box-orient: vertical; 
-        overflow: hidden; 
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
         hyphens: auto;
     }
-    .detail-row.full .dv, .detail-row.span2 .dv { 
+    .detail-row.full .dv,
+    .detail-row.span2 .dv {
         -webkit-line-clamp: 4;
         font-size: .82rem;
     }
-    .detail-section-title {
-        font-size: .8rem;
-        font-weight: 700;
-        color: #16a34a;
-        margin: 12px 0 10px 0;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding-bottom: 6px;
-        border-bottom: 2px solid #bbf7d0;
-    }
-    
+
     /* Preference Adjustment Badge */
     .adjustment-badge {
         display: inline-flex;
@@ -391,14 +374,8 @@
         font-weight: 700;
         margin-left: 6px;
     }
-    .adjustment-badge.positive {
-        background: #dcfce7;
-        color: #166534;
-    }
-    .adjustment-badge.negative {
-        background: #fee2e2;
-        color: #991b1b;
-    }
+    .adjustment-badge.positive { background: #dcfce7; color: #166534; }
+    .adjustment-badge.negative { background: #fee2e2; color: #991b1b; }
 
     /* ── Action Buttons ────────────────────────────── */
     .action-bar {
@@ -414,12 +391,13 @@
         font-weight: 600;
     }
 
-    /* ── Product Grid Optimization ──────────────────── */
+    /* ── Product Grid ───────────────────────────────── */
     .product-grid-wrapper {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
         gap: 20px;
         margin-bottom: 24px;
+        align-items: start;
     }
     .product-empty-state {
         border: 1px dashed #cbd5e1;
@@ -427,14 +405,6 @@
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         padding: 20px;
         color: #64748b;
-    }
-    .product-grid-wrapper.mb-4 {
-        margin-bottom: 0 !important;
-    }
-
-    /* ── Section Spacing ───────────────────────────── */
-    .section-label + .product-grid-wrapper {
-        margin-top: 16px;
     }
 
     /* ── Mobile Responsive ─────────────────────────── */
@@ -452,7 +422,7 @@
         .product-card-img, .product-card-img-empty { height: 110px; }
         .disease-meta-grid { grid-template-columns: 1fr 1fr; }
         .detail-list { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
-        .detail-row.full { grid-column: 1 / -1; }
+        .detail-row.full  { grid-column: 1 / -1; }
         .detail-row.span2 { grid-column: 1 / -1; }
         .product-grid-wrapper { grid-template-columns: 1fr; gap: 16px; }
         .action-bar .btn { flex: 1; min-width: 140px; text-align: center; }
@@ -476,6 +446,20 @@
 
     $isPreview = $isPreview ?? true;
     $selectedSymptoms = collect(data_get($hasilDiagnosa->first(), 'rekomendasi.preferensi_pengguna.gejala_terpilih', []));
+    $formatCurrency = static function ($value) {
+        return is_numeric($value) && (float) $value > 0
+            ? 'Rp ' . number_format((float) $value, 0, ',', '.')
+            : '-';
+    };
+    $formatUnitPrice = static function ($value, $unit = null) use ($formatCurrency) {
+        $formatted = $formatCurrency($value);
+
+        if ($formatted === '-') {
+            return '-';
+        }
+
+        return trim($formatted . ($unit ? ' / ' . $unit : ''));
+    };
 @endphp
 @guest
 <div class="container py-4">
@@ -541,23 +525,19 @@
 {{-- ── Per-Disease Batch ──────────────────────────────── --}}
 @foreach($hasilDiagnosa as $hasil)
 @php
-    $rekomendasi = $hasil['rekomendasi'];
-    $sortedPupuk = $rekomendasi->detailPupuk->sortBy('peringkat')->values();
-    $sortedPestisida = $rekomendasi->detailPestisida->sortBy('peringkat')->values();
-    $topPupuk = $sortedPupuk->first();
-    $topPestisida = $sortedPestisida->first();
-    $pupukThreshold = max(0.1, (float) ($topPupuk->nilai_vi ?? 0) - 0.15);
+    $rekomendasi      = $hasil['rekomendasi'];
+    $sortedPupuk      = $rekomendasi->detailPupuk->sortBy('peringkat')->values();
+    $sortedPestisida  = $rekomendasi->detailPestisida->sortBy('peringkat')->values();
+    $topPupuk         = $sortedPupuk->first();
+    $topPestisida     = $sortedPestisida->first();
+    $pupukThreshold   = max(0.1, (float) ($topPupuk->nilai_vi ?? 0) - 0.15);
     $pestisidaThreshold = max(0.1, (float) ($topPestisida->nilai_vi ?? 0) - 0.15);
     $recommendedPupuk = $sortedPupuk
         ->filter(fn ($item) => (float) ($item->nilai_vi ?? 0) >= $pupukThreshold)->values();
     $recommendedPestisida = $sortedPestisida
         ->filter(fn ($item) => (float) ($item->nilai_vi ?? 0) >= $pestisidaThreshold)->values();
-    if ($recommendedPupuk->isEmpty()) {
-        $recommendedPupuk = $sortedPupuk;
-    }
-    if ($recommendedPestisida->isEmpty()) {
-        $recommendedPestisida = $sortedPestisida;
-    }
+    if ($recommendedPupuk->isEmpty())     { $recommendedPupuk     = $sortedPupuk; }
+    if ($recommendedPestisida->isEmpty()) { $recommendedPestisida = $sortedPestisida; }
     $topScore = max((float) ($topPupuk->nilai_vi ?? 0), (float) ($topPestisida->nilai_vi ?? 0));
 @endphp
 
@@ -567,6 +547,7 @@
         {{-- ── Left: Disease Info ──────────────────── --}}
         <div class="col-xl-4 col-lg-4">
             <div class="disease-sidebar">
+
                 {{-- Image --}}
                 @if($rekomendasi->penyakit->gambar_url)
                     <img src="{{ $rekomendasi->penyakit->gambar_url }}"
@@ -606,7 +587,7 @@
                 </div>
                 @endif
 
-                {{-- Meta grid: fills the blank space below --}}
+                {{-- Meta grid --}}
                 <div class="disease-meta-grid">
                     <div class="disease-meta-item">
                         <div class="label">Pupuk</div>
@@ -639,13 +620,14 @@
                     </div>
                 </div>
                 @endif
-            </div>
-        </div>
+
+            </div>{{-- end disease-sidebar --}}
+        </div>{{-- end col left --}}
 
         {{-- ── Right: Recommendations ───────────────── --}}
         <div class="col-xl-8 col-lg-8">
 
-            {{-- Pupuk Section --}}
+            {{-- ── Pupuk Section ── --}}
             @if($recommendedPupuk->isNotEmpty())
             <div class="section-label">
                 <i class="bi bi-bag-fill text-success"></i> Rekomendasi Pupuk
@@ -653,110 +635,105 @@
             <div class="product-grid-wrapper">
                 @foreach($recommendedPupuk as $item)
                 <div class="product-card">
-                        {{-- Image --}}
-                        @if(optional($item->pupuk)->gambar_url)
-                            <img src="{{ $item->pupuk->gambar_url }}"
-                                 alt="{{ $item->pupuk->nama }}"
-                                 class="product-card-img">
-                        @else
-                            <div class="product-card-img-empty">
-                                <i class="bi bi-bag"></i>
-                            </div>
-                        @endif
 
-                        <div class="product-card-body">
-                            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                                <span class="product-rank-badge {{ $item->peringkat == 1 ? 'rank-1' : '' }}">
-                                    <i class="bi bi-award-fill"></i> #{{ $item->peringkat }}
-                                </span>
-                                @if($item->pupuk->kode ?? null)
-                                <span class="badge bg-light text-secondary border" style="font-size:.68rem;">{{ $item->pupuk->kode }}</span>
-                                @endif
-                                @if($rekomendasi->preferensi_label)
-                                <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:.68rem;">
-                                    <i class="bi bi-stars"></i> {{ $rekomendasi->preferensi_label }}
-                                </span>
-                                @endif
-                            </div>
-                            <div class="product-type-tag">Pupuk</div>
-                            <div class="product-name">{{ $item->pupuk->nama ?? '-' }}</div>
-                            <div class="product-desc">
-                                {{ ExpertSystemPresenter::shortDescription(
-                                    optional($item->pupuk)->fungsi_utama,
-                                    optional($item->pupuk)->efek_penggunaan
-                                ) }}
-                            </div>
-                            <div class="product-score-row">
-                                <div class="score-bar-wrap">
-                                    <div class="score-bar-fill {{ (float)$item->nilai_vi < 0.7 ? 'medium' : '' }}"
-                                         style="width: {{ ExpertSystemPresenter::percent($item->nilai_vi) }}"></div>
-                                </div>
-                                <span class="score-label">{{ ExpertSystemPresenter::percent($item->nilai_vi) }}</span>
-                                @if(data_get($item, 'adjustment_info.preset_boost', 0) != 0)
-                                    <span class="adjustment-badge {{ data_get($item, 'adjustment_info.preset_boost', 0) > 0 ? 'positive' : 'negative' }}">
-                                        <i class="bi bi-{{ data_get($item, 'adjustment_info.preset_boost', 0) > 0 ? 'arrow-up' : 'arrow-down' }}"></i>
-                                        {{ number_format(abs(data_get($item, 'adjustment_info.preset_boost', 0)) * 100, 1) }}%
-                                    </span>
-                                @endif
-                                <span class="badge text-bg-{{ ExpertSystemPresenter::confidenceTone($item->nilai_vi) }}" style="font-size:.7rem;">
-                                    {{ ExpertSystemPresenter::confidenceLabel($item->nilai_vi) }}
-                                </span>
-                            </div>
+                    {{-- Image --}}
+                    @if(optional($item->pupuk)->gambar_url)
+                        <img src="{{ $item->pupuk->gambar_url }}"
+                             alt="{{ $item->pupuk->nama }}"
+                             class="product-card-img">
+                    @else
+                        <div class="product-card-img-empty">
+                            <i class="bi bi-bag"></i>
                         </div>
+                    @endif
 
-                        {{-- Detail Toggle --}}
-                        <details class="detail-toggle">
-                            <summary>
-                                <span>Lihat Detail</span>
-                                <span class="chevron"><i class="bi bi-chevron-down"></i></span>
-                            </summary>
-                            <div class="detail-panel">
-                                <div class="fw-semibold mb-3" style="font-size:.85rem;">
-                                    <i class="bi bi-info-circle me-1 text-success"></i>
-                                    {{ $item->pupuk->nama ?? 'Pupuk' }}
-                                </div>
-                                <div class="detail-list">
-                                    <div class="detail-row"><div class="dl">Kode</div><div class="dv">{{ $item->pupuk->kode ?? '-' }}</div></div>
-                                    <div class="detail-row"><div class="dl">Peringkat</div><div class="dv">#{{ $item->peringkat ?? '-' }}</div></div>
-                                    <div class="detail-row"><div class="dl">Skor</div><div class="dv">{{ number_format((float) $item->nilai_vi, 4) }}</div></div>
-                                    <div class="detail-row"><div class="dl">Takaran</div><div class="dv">{{ $item->pupuk->takaran ?? '-' }}</div></div>
-                                    <div class="detail-row"><div class="dl">Frekuensi</div><div class="dv">{{ $item->pupuk->frekuensi_aplikasi ?? '-' }}</div></div>
-                                    <div class="detail-row"><div class="dl">Kandungan</div><div class="dv">{{ $item->pupuk->kandungan ?? '-' }}</div></div>
-                                    <div class="detail-row span2"><div class="dl">Detail Kandungan</div><div class="dv">{{ $item->pupuk->kandungan_detail ?? '-' }}</div></div>
-                                    <div class="detail-row span2"><div class="dl">Fungsi Utama</div><div class="dv">{{ $item->pupuk->fungsi_utama ?? '-' }}</div></div>
-                                    <div class="detail-row span2"><div class="dl">Efek Penggunaan</div><div class="dv">{{ $item->pupuk->efek_penggunaan ?? '-' }}</div></div>
-                                    <div class="detail-row span2"><div class="dl">Cara Aplikasi</div><div class="dv">{{ $item->pupuk->cara_aplikasi ?? '-' }}</div></div>
-                                    <div class="detail-row full"><div class="dl">Jadwal / Umur</div><div class="dv">{{ $item->pupuk->jadwal_umur_aplikasi ?? '-' }}</div></div>
-                                </div>
-                                @if(collect($item->pupuk->gejala_cocok ?? [])->isNotEmpty())
-                                <div class="mt-3">
-                                    <div class="section-label" style="font-size:.68rem; margin-bottom:8px;">
-                                        <i class="bi bi-link-45deg"></i> Gejala Didukung
-                                    </div>
-                                    <div class="symptom-badges">
-                                        @foreach(collect($item->pupuk->gejala_cocok ?? []) as $gejalaItem)
-                                        <span class="symptom-badge" style="font-size:.72rem;">
-                                            {{ data_get($gejalaItem, 'kode') ? data_get($gejalaItem, 'kode') . ' · ' : '' }}{{ data_get($gejalaItem, 'nama_gejala') }}
-                                        </span>
-                                        @endforeach
-                                    </div>
-                                </div>
-                                @else
-                                <p class="small text-muted mt-2 mb-0">Belum ada gejala yang terhubung.</p>
-                                @endif
+                    <div class="product-card-body">
+                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                            <span class="product-rank-badge {{ $item->peringkat == 1 ? 'rank-1' : '' }}">
+                                <i class="bi bi-award-fill"></i> #{{ $item->peringkat }}
+                            </span>
+                            @if($item->pupuk->kode ?? null)
+                            <span class="badge bg-light text-secondary border" style="font-size:.68rem;">{{ $item->pupuk->kode }}</span>
+                            @endif
+                            @if($rekomendasi->preferensi_label)
+                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:.68rem;">
+                                <i class="bi bi-stars"></i> {{ $rekomendasi->preferensi_label }}
+                            </span>
+                            @endif
+                        </div>
+                        <div class="product-type-tag">Pupuk</div>
+                        <div class="product-name">{{ $item->pupuk->nama ?? '-' }}</div>
+                        <div class="product-desc">
+                            {{ ExpertSystemPresenter::shortDescription(
+                                optional($item->pupuk)->fungsi_utama,
+                                optional($item->pupuk)->efek_penggunaan
+                            ) }}
+                        </div>
+                        <div class="product-score-row">
+                            <div class="score-bar-wrap">
+                                <div class="score-bar-fill {{ (float)$item->nilai_vi < 0.7 ? 'medium' : '' }}"
+                                     style="width: {{ ExpertSystemPresenter::percent($item->nilai_vi) }}"></div>
                             </div>
-                        </details>
-                </div>
-                @endforeach
-            </div>
-            @else
-            <div class="product-empty-state mb-4">
-                <div class="fw-semibold mb-1">Data pupuk belum tersedia</div>
-                <div class="small mb-0">Belum ada pupuk dengan kecocokan positif dari gejala yang dipilih pada analisis ini.</div>
-            </div>
-            @endif
+                            <span class="score-label">{{ ExpertSystemPresenter::percent($item->nilai_vi) }}</span>
+                            @if(data_get($item, 'adjustment_info.preset_boost', 0) != 0)
+                                <span class="adjustment-badge {{ data_get($item, 'adjustment_info.preset_boost', 0) > 0 ? 'positive' : 'negative' }}">
+                                    <i class="bi bi-{{ data_get($item, 'adjustment_info.preset_boost', 0) > 0 ? 'arrow-up' : 'arrow-down' }}"></i>
+                                    {{ number_format(abs(data_get($item, 'adjustment_info.preset_boost', 0)) * 100, 1) }}%
+                                </span>
+                            @endif
+                            <span class="badge text-bg-{{ ExpertSystemPresenter::confidenceTone($item->nilai_vi) }}" style="font-size:.7rem;">
+                                {{ ExpertSystemPresenter::confidenceLabel($item->nilai_vi) }}
+                            </span>
+                        </div>
+                    </div>{{-- end product-card-body --}}
 
-            {{-- Pestisida Section --}}
+                    {{-- Detail Toggle --}}
+                    <details class="detail-toggle">
+                        <summary>
+                            <span>Lihat Detail</span>
+                            <span class="chevron"><i class="bi bi-chevron-down"></i></span>
+                        </summary>
+                        <div class="detail-panel">
+                            <div class="fw-semibold mb-3" style="font-size:.85rem;">
+                                <i class="bi bi-info-circle me-1 text-success"></i>
+                                {{ $item->pupuk->nama ?? 'Pupuk' }}
+                            </div>
+                            <div class="detail-list">
+                                <div class="detail-row">
+                                    <div class="dl">Peringkat</div>
+                                    <div class="dv">#{{ $item->peringkat ?? '-' }}</div>
+                                </div>
+                                <div class="detail-row span2">
+                                    <div class="dl">Detail Kandungan</div>
+                                    <div class="dv">{{ $item->pupuk->kandungan_detail ?? '-' }}</div>
+                                </div>
+                                <div class="detail-row span2">
+                                    <div class="dl">Harga per Satuan</div>
+                                    <div class="dv">{{ $formatUnitPrice($item->pupuk->harga_per_kg ?? null, $item->pupuk->satuan ?? 'kg') }}</div>
+                                </div>
+                                <div class="detail-row span2">
+                                    <div class="dl">Fungsi Utama</div>
+                                    <div class="dv">{{ $item->pupuk->fungsi_utama ?? '-' }}</div>
+                                </div>
+                                <div class="detail-row span2">
+                                    <div class="dl">Efek Penggunaan</div>
+                                    <div class="dv">{{ $item->pupuk->efek_penggunaan ?? '-' }}</div>
+                                </div>
+                                <div class="detail-row span2">
+                                    <div class="dl">Frekuensi Aplikasi</div>
+                                    <div class="dv">{{ $item->pupuk->frekuensi_aplikasi ?? '-' }}</div>
+                                </div>
+                            </div>{{-- end detail-list --}}
+
+                        </div>{{-- end detail-panel --}}
+                    </details>{{-- end detail-toggle --}}
+
+                </div>{{-- end product-card --}}
+                @endforeach
+            </div>{{-- end product-grid-wrapper (pupuk) --}}
+            @endif{{-- end if recommendedPupuk --}}
+
+            {{-- ── Pestisida Section ── --}}
             @if($recommendedPestisida->isNotEmpty())
             <div class="section-label">
                 <i class="bi bi-shield-fill-check text-warning"></i> Rekomendasi Pestisida
@@ -764,115 +741,121 @@
             <div class="product-grid-wrapper">
                 @foreach($recommendedPestisida as $item)
                 <div class="product-card">
-                        {{-- Image --}}
-                        @if(optional($item->pestisida)->gambar_url)
-                            <img src="{{ $item->pestisida->gambar_url }}"
-                                 alt="{{ $item->pestisida->nama }}"
-                                 class="product-card-img">
-                        @else
-                            <div class="product-card-img-empty">
-                                <i class="bi bi-shield"></i>
-                            </div>
-                        @endif
 
-                        <div class="product-card-body">
-                            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                                <span class="product-rank-badge {{ $item->peringkat == 1 ? 'rank-1' : '' }}">
-                                    <i class="bi bi-award-fill"></i> #{{ $item->peringkat }}
-                                </span>
-                                @if($item->pestisida->kode ?? null)
-                                <span class="badge bg-light text-secondary border" style="font-size:.68rem;">{{ $item->pestisida->kode }}</span>
-                                @endif
-                                @if($rekomendasi->preferensi_label)
-                                <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:.68rem;">
-                                    <i class="bi bi-stars"></i> {{ $rekomendasi->preferensi_label }}
-                                </span>
-                                @endif
-                            </div>
-                            <div class="product-type-tag">Pestisida</div>
-                            <div class="product-name">{{ $item->pestisida->nama ?? '-' }}</div>
-                            <div class="product-desc">
-                                {{ ExpertSystemPresenter::shortDescription(
-                                    optional($item->pestisida)->fungsi,
-                                    optional($item->pestisida)->efek_penggunaan
-                                ) }}
-                            </div>
-                            <div class="product-score-row">
-                                <div class="score-bar-wrap">
-                                    <div class="score-bar-fill {{ (float)$item->nilai_vi < 0.7 ? 'medium' : '' }}"
-                                         style="width: {{ ExpertSystemPresenter::percent($item->nilai_vi) }}"></div>
-                                </div>
-                                <span class="score-label">{{ ExpertSystemPresenter::percent($item->nilai_vi) }}</span>
-                                @if(data_get($item, 'adjustment_info.preset_boost', 0) != 0)
-                                    <span class="adjustment-badge {{ data_get($item, 'adjustment_info.preset_boost', 0) > 0 ? 'positive' : 'negative' }}">
-                                        <i class="bi bi-{{ data_get($item, 'adjustment_info.preset_boost', 0) > 0 ? 'arrow-up' : 'arrow-down' }}"></i>
-                                        {{ number_format(abs(data_get($item, 'adjustment_info.preset_boost', 0)) * 100, 1) }}%
-                                    </span>
-                                @endif
-                                <span class="badge text-bg-{{ ExpertSystemPresenter::confidenceTone($item->nilai_vi) }}" style="font-size:.7rem;">
-                                    {{ ExpertSystemPresenter::confidenceLabel($item->nilai_vi) }}
-                                </span>
-                            </div>
+                    {{-- Image --}}
+                    @if(optional($item->pestisida)->gambar_url)
+                        <img src="{{ $item->pestisida->gambar_url }}"
+                             alt="{{ $item->pestisida->nama }}"
+                             class="product-card-img">
+                    @else
+                        <div class="product-card-img-empty">
+                            <i class="bi bi-shield"></i>
                         </div>
+                    @endif
 
-                        {{-- Detail Toggle --}}
-                        <details class="detail-toggle">
-                            <summary>
-                                <span>Lihat Detail</span>
-                                <span class="chevron"><i class="bi bi-chevron-down"></i></span>
-                            </summary>
-                            <div class="detail-panel">
-                                <div class="fw-semibold mb-3" style="font-size:.85rem;">
-                                    <i class="bi bi-info-circle me-1 text-warning"></i>
-                                    {{ $item->pestisida->nama ?? 'Pestisida' }}
-                                </div>
-                                <div class="detail-list">
-                                    <div class="detail-row"><div class="dl">Kode</div><div class="dv">{{ $item->pestisida->kode ?? '-' }}</div></div>
-                                    <div class="detail-row"><div class="dl">Peringkat</div><div class="dv">#{{ $item->peringkat ?? '-' }}</div></div>
-                                    <div class="detail-row"><div class="dl">Skor</div><div class="dv">{{ number_format((float) $item->nilai_vi, 4) }}</div></div>
-                                    <div class="detail-row"><div class="dl">Jenis</div><div class="dv">{{ $item->pestisida->jenis ?? '-' }}</div></div>
-                                    <div class="detail-row"><div class="dl">Dosis</div><div class="dv">{{ $item->pestisida->dosis ?? '-' }}</div></div>
-                                    <div class="detail-row"><div class="dl">Takaran</div><div class="dv">{{ $item->pestisida->takaran ?? '-' }}</div></div>
-                                    <div class="detail-row"><div class="dl">Frekuensi</div><div class="dv">{{ $item->pestisida->frekuensi_aplikasi ?? '-' }}</div></div>
-                                    <div class="detail-row span2"><div class="dl">Bahan Aktif</div><div class="dv">{{ $item->pestisida->bahan_aktif ?? '-' }}</div></div>
-                                    <div class="detail-row span2"><div class="dl">Detail Kandungan</div><div class="dv">{{ $item->pestisida->kandungan_detail ?? '-' }}</div></div>
-                                    <div class="detail-row span2"><div class="dl">Fungsi</div><div class="dv">{{ $item->pestisida->fungsi ?? '-' }}</div></div>
-                                    <div class="detail-row span2"><div class="dl">Efek Penggunaan</div><div class="dv">{{ $item->pestisida->efek_penggunaan ?? '-' }}</div></div>
-                                    <div class="detail-row span2"><div class="dl">Cara Aplikasi</div><div class="dv">{{ $item->pestisida->cara_aplikasi ?? '-' }}</div></div>
-                                    <div class="detail-row full"><div class="dl">Jadwal / Umur</div><div class="dv">{{ $item->pestisida->jadwal_umur_aplikasi ?? '-' }}</div></div>
-                                </div>
-                                @if(collect($item->pestisida->gejala_cocok ?? [])->isNotEmpty())
-                                <div class="mt-3">
-                                    <div class="section-label" style="font-size:.68rem; margin-bottom:8px;">
-                                        <i class="bi bi-link-45deg"></i> Gejala Didukung
-                                    </div>
-                                    <div class="symptom-badges">
-                                        @foreach(collect($item->pestisida->gejala_cocok ?? []) as $gejalaItem)
-                                        <span class="symptom-badge" style="font-size:.72rem;">
-                                            {{ data_get($gejalaItem, 'kode') ? data_get($gejalaItem, 'kode') . ' · ' : '' }}{{ data_get($gejalaItem, 'nama_gejala') }}
-                                        </span>
-                                        @endforeach
-                                    </div>
-                                </div>
-                                @else
-                                <p class="small text-muted mt-2 mb-0">Belum ada gejala yang terhubung.</p>
-                                @endif
+                    <div class="product-card-body">
+                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                            <span class="product-rank-badge {{ $item->peringkat == 1 ? 'rank-1' : '' }}">
+                                <i class="bi bi-award-fill"></i> #{{ $item->peringkat }}
+                            </span>
+                            @if($item->pestisida->kode ?? null)
+                            <span class="badge bg-light text-secondary border" style="font-size:.68rem;">{{ $item->pestisida->kode }}</span>
+                            @endif
+                            @if($rekomendasi->preferensi_label)
+                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:.68rem;">
+                                <i class="bi bi-stars"></i> {{ $rekomendasi->preferensi_label }}
+                            </span>
+                            @endif
+                        </div>
+                        <div class="product-type-tag">Pestisida</div>
+                        <div class="product-name">{{ $item->pestisida->nama ?? '-' }}</div>
+                        <div class="product-desc">
+                            {{ ExpertSystemPresenter::shortDescription(
+                                optional($item->pestisida)->fungsi,
+                                optional($item->pestisida)->efek_penggunaan
+                            ) }}
+                        </div>
+                        <div class="product-score-row">
+                            <div class="score-bar-wrap">
+                                <div class="score-bar-fill {{ (float)$item->nilai_vi < 0.7 ? 'medium' : '' }}"
+                                     style="width: {{ ExpertSystemPresenter::percent($item->nilai_vi) }}"></div>
                             </div>
-                        </details>
-                </div>
+                            <span class="score-label">{{ ExpertSystemPresenter::percent($item->nilai_vi) }}</span>
+                            @if(data_get($item, 'adjustment_info.preset_boost', 0) != 0)
+                                <span class="adjustment-badge {{ data_get($item, 'adjustment_info.preset_boost', 0) > 0 ? 'positive' : 'negative' }}">
+                                    <i class="bi bi-{{ data_get($item, 'adjustment_info.preset_boost', 0) > 0 ? 'arrow-up' : 'arrow-down' }}"></i>
+                                    {{ number_format(abs(data_get($item, 'adjustment_info.preset_boost', 0)) * 100, 1) }}%
+                                </span>
+                            @endif
+                            <span class="badge text-bg-{{ ExpertSystemPresenter::confidenceTone($item->nilai_vi) }}" style="font-size:.7rem;">
+                                {{ ExpertSystemPresenter::confidenceLabel($item->nilai_vi) }}
+                            </span>
+                        </div>
+                    </div>{{-- end product-card-body --}}
+
+                    {{-- Detail Toggle --}}
+                    <details class="detail-toggle">
+                        <summary>
+                            <span>Lihat Detail</span>
+                            <span class="chevron"><i class="bi bi-chevron-down"></i></span>
+                        </summary>
+                        <div class="detail-panel">
+                            <div class="fw-semibold mb-3" style="font-size:.85rem;">
+                                <i class="bi bi-info-circle me-1 text-warning"></i>
+                                {{ $item->pestisida->nama ?? 'Pestisida' }}
+                            </div>
+                            <div class="detail-list">
+                                <div class="detail-row">
+                                    <div class="dl">Peringkat</div>
+                                    <div class="dv">#{{ $item->peringkat ?? '-' }}</div>
+                                </div>
+                                <div class="detail-row span2">
+                                    <div class="dl">Detail Kandungan</div>
+                                    <div class="dv">{{ $item->pestisida->kandungan_detail ?? '-' }}</div>
+                                </div>
+                                <div class="detail-row span2">
+                                    <div class="dl">Fungsi</div>
+                                    <div class="dv">{{ $item->pestisida->fungsi ?? '-' }}</div>
+                                </div>
+                                <div class="detail-row span2">
+                                    <div class="dl">Dosis Singkat</div>
+                                    <div class="dv">{{ $item->pestisida->dosis ?? '-' }}</div>
+                                </div>
+                                <div class="detail-row span2">
+                                    <div class="dl">Satuan Harga</div>
+                                    <div class="dv">{{ $formatUnitPrice($item->pestisida->harga ?? null, $item->pestisida->satuan_harga ?? null) }}</div>
+                                </div>
+                                <div class="detail-row span2">
+                                    <div class="dl">Efek Penggunaan</div>
+                                    <div class="dv">{{ $item->pestisida->efek_penggunaan ?? '-' }}</div>
+                                </div>
+                                <div class="detail-row span2">
+                                    <div class="dl">Cara Aplikasi</div>
+                                    <div class="dv">{{ $item->pestisida->cara_aplikasi ?? '-' }}</div>
+                                </div>
+                                <div class="detail-row span2">
+                                    <div class="dl">Frekuensi Aplikasi</div>
+                                    <div class="dv">{{ $item->pestisida->frekuensi_aplikasi ?? '-' }}</div>
+                                </div>
+                            </div>{{-- end detail-list --}}
+
+                        </div>{{-- end detail-panel --}}
+                    </details>{{-- end detail-toggle --}}
+
+                </div>{{-- end product-card --}}
                 @endforeach
-            </div>{{-- end product-grid-wrapper --}}
+            </div>{{-- end product-grid-wrapper (pestisida) --}}
             @else
             <div class="product-empty-state">
                 <div class="fw-semibold mb-1">Data pestisida belum tersedia</div>
                 <div class="small mb-0">Belum ada pestisida dengan kecocokan positif dari gejala yang dipilih pada analisis ini.</div>
             </div>
-            @endif
+            @endif{{-- end if recommendedPestisida --}}
 
-        </div>{{-- end right col --}}
+        </div>{{-- end col right --}}
     </div>{{-- end row --}}
 </div>{{-- end batch-card --}}
-@endforeach
+@endforeach{{-- end hasilDiagnosa --}}
 
 {{-- ── Action Bar ─────────────────────────────────────── --}}
 <div class="action-bar">
@@ -897,27 +880,4 @@
 </div>
 @endguest
 
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Attach ke setiap summary langsung — toggle event tidak bubble di semua browser
-    document.querySelectorAll('.detail-toggle > summary').forEach(function (summary) {
-        summary.addEventListener('click', function (e) {
-            var thisDetails = summary.parentElement;
-            var card = thisDetails.closest('.batch-card');
-            if (!card) return;
-
-            // Jika sedang tertutup (akan dibuka), tutup semua yang lain
-            if (!thisDetails.open) {
-                card.querySelectorAll('.detail-toggle').forEach(function (d) {
-                    if (d !== thisDetails) {
-                        d.removeAttribute('open');
-                    }
-                });
-            }
-        });
-    });
-});
-</script>
-@endpush
 @endsection
