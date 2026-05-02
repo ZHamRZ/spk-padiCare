@@ -859,9 +859,19 @@
 
 {{-- ── Action Bar ─────────────────────────────────────── --}}
 <div class="action-bar">
-    @if($isPreview)
+    @if($isPreview && !auth()->check())
     <a href="{{ route('login') }}" class="btn btn-outline-success">
         <i class="bi bi-box-arrow-in-right me-1"></i>Login untuk Simpan
+    </a>
+    <a href="{{ route('user.rekomendasi.preview.cetak') }}" target="_blank" class="btn btn-outline-secondary">
+        <i class="bi bi-printer me-1"></i>Cetak Hasil
+    </a>
+    <a href="{{ route('user.diagnosis.index') }}" class="btn btn-success">
+        <i class="bi bi-arrow-repeat me-1"></i>Diagnosis Lagi
+    </a>
+    @elseif($isPreview && auth()->check())
+    <a href="{{ route('user.riwayat.index') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-clock-history me-1"></i>Lihat Riwayat
     </a>
     <a href="{{ route('user.rekomendasi.preview.cetak') }}" target="_blank" class="btn btn-outline-secondary">
         <i class="bi bi-printer me-1"></i>Cetak Hasil

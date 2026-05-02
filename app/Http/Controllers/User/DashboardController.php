@@ -51,14 +51,17 @@ class DashboardController extends Controller
             ->take(6)
             ->values();
 
+        // Ambil riwayat referensi dari semua diagnosa terbaru secara global (bukan per user)
         $riwayatReferensi = $penyakitPopuler
             ->map(function ($penyakit) {
-                $referensi = $penyakit->rekomendasi()
-                    ->with([
+                // Ambil rekomendasi terbaru untuk penyakit ini dari SEMUA user
+                $referensi = Rekomendasi::with([
+                        'user',
                         'penyakit.gejala',
                         'detailPupuk.pupuk',
                         'detailPestisida.pestisida',
                     ])
+                    ->where('id_penyakit', $penyakit->id)
                     ->latest()
                     ->first();
 
