@@ -17,21 +17,21 @@
             Tabel rule CF pupuk belum tersedia di database. Jalankan migration terlebih dahulu agar panel ini bisa dipakai.
         </div>
         @endunless
-        @if($gejala->isEmpty() || $pupuk->isEmpty())
-        <div class="alert alert-warning mb-0">Lengkapi data gejala dan pupuk sebelum mengisi aturan CF.</div>
+        @if($penyakit->isEmpty() || $pupuk->isEmpty())
+        <div class="alert alert-warning mb-0">Lengkapi data penyakit dan pupuk sebelum mengisi aturan CF.</div>
         @elseif(!($cfReady ?? false))
         <div class="alert alert-light border mb-0">Setelah migration dijalankan, form rule CF pupuk akan aktif otomatis.</div>
         @else
         <div class="alert alert-info d-flex justify-content-between align-items-center">
             <div>
-                Pakar mengisi nilai <strong>MB</strong> dan <strong>MD</strong> untuk hubungan antara gejala dan pupuk. 
+                Pakar mengisi nilai <strong>MB</strong> dan <strong>MD</strong> untuk hubungan antara penyakit dan pupuk. 
                 Gunakan filter untuk memudahkan input data.
             </div>
             <div>
-                <select id="filterGejala" class="form-select form-select-sm" style="min-width: 200px;">
-                    <option value="">-- Semua Gejala --</option>
-                    @foreach($gejala as $g)
-                    <option value="{{ $g->id }}">{{ $g->kode }} - {{ $g->nama_gejala }}</option>
+                <select id="filterPenyakit" class="form-select form-select-sm" style="min-width: 200px;">
+                    <option value="">-- Semua Penyakit --</option>
+                    @foreach($penyakit as $p)
+                    <option value="{{ $p->id }}">{{ $p->kode }} - {{ $p->nama }}</option>
                     @endforeach
                 </select>
             </div>
@@ -44,18 +44,18 @@
                 <span class="ms-2 text-muted small">Total: <span id="totalRules">0</span> rule</span>
             </div>
             
-            @foreach($gejala as $index => $gejalaItem)
-            <div class="border rounded-4 p-3 mb-3 gejala-item" data-gejala-id="{{ $gejalaItem->id }}">
+            @foreach($penyakit as $index => $penyakitItem)
+            <div class="border rounded-4 p-3 mb-3 penyakit-item" data-penyakit-id="{{ $penyakitItem->id }}">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold mb-0">
-                        <span class="badge bg-primary me-2">{{ $gejalaItem->kode }}</span>
-                        {{ $gejalaItem->nama_gejala }}
+                        <span class="badge bg-primary me-2">{{ $penyakitItem->kode }}</span>
+                        {{ $penyakitItem->nama }}
                     </h5>
-                    <button type="button" class="btn btn-sm btn-link toggle-gejala" data-target="gejala-{{ $gejalaItem->id }}">
+                    <button type="button" class="btn btn-sm btn-link toggle-penyakit" data-target="penyakit-{{ $penyakitItem->id }}">
                         <i class="bi bi-chevron-up"></i>
                     </button>
                 </div>
-                <div id="gejala-{{ $gejalaItem->id }}" class="table-responsive">
+                <div id="penyakit-{{ $penyakitItem->id }}" class="table-responsive">
                     <table class="table table-bordered align-middle table-sm mb-0">
                         <thead class="table-light">
                             <tr>
@@ -68,10 +68,10 @@
                         </thead>
                         <tbody>
                             @foreach($pupuk as $pupukItem)
-                            @php($key = $gejalaItem->id . '_' . $pupukItem->id)
+                            @php($key = $penyakitItem->id . '_' . $pupukItem->id)
                             @php($rule = $rules->get($key))
-                            @php($mb = old("rules.{$gejalaItem->id}.{$pupukItem->id}.mb", optional($rule)->mb ?? 0.700))
-                            @php($md = old("rules.{$gejalaItem->id}.{$pupukItem->id}.md", optional($rule)->md ?? 0.100))
+                            @php($mb = old("rules.{$penyakitItem->id}.{$pupukItem->id}.mb", optional($rule)->mb ?? 0.700))
+                            @php($md = old("rules.{$penyakitItem->id}.{$pupukItem->id}.md", optional($rule)->md ?? 0.100))
                             <tr>
                                 <td>
                                     <strong>{{ $pupukItem->nama }}</strong><br>
@@ -79,25 +79,25 @@
                                 </td>
                                 <td>
                                     <input type="number" min="0" max="1" step="0.001"
-                                        name="rules[{{ $gejalaItem->id }}][{{ $pupukItem->id }}][mb]"
+                                        name="rules[{{ $penyakitItem->id }}][{{ $pupukItem->id }}][mb]"
                                         value="{{ $mb }}"
                                         class="form-control form-control-sm cf-input"
-                                        data-cf="{{ $gejalaItem->id }}-{{ $pupukItem->id }}">
+                                        data-cf="{{ $penyakitItem->id }}-{{ $pupukItem->id }}">
                                 </td>
                                 <td>
                                     <input type="number" min="0" max="1" step="0.001"
-                                        name="rules[{{ $gejalaItem->id }}][{{ $pupukItem->id }}][md]"
+                                        name="rules[{{ $penyakitItem->id }}][{{ $pupukItem->id }}][md]"
                                         value="{{ $md }}"
                                         class="form-control form-control-sm cf-input"
-                                        data-cf="{{ $gejalaItem->id }}-{{ $pupukItem->id }}">
+                                        data-cf="{{ $penyakitItem->id }}-{{ $pupukItem->id }}">
                                 </td>
-                                <td class="fw-semibold cf-result" data-cf="{{ $gejalaItem->id }}-{{ $pupukItem->id }}">
+                                <td class="fw-semibold cf-result" data-cf="{{ $penyakitItem->id }}-{{ $pupukItem->id }}">
                                     {{ number_format((float) $mb - (float) $md, 3) }}
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-outline-danger reset-btn" 
                                             data-mb="0.700" data-md="0.100"
-                                            data-target="{{ $gejalaItem->id }}-{{ $pupukItem->id }}">
+                                            data-target="{{ $penyakitItem->id }}-{{ $pupukItem->id }}">
                                         <i class="bi bi-arrow-counterclockwise"></i>
                                     </button>
                                 </td>
@@ -127,7 +127,7 @@
 </div>
 
 <style>
-.gejala-item { transition: all 0.3s ease; }
+.penyakit-item { transition: all 0.3s ease; }
 .cf-input { text-align: center; }
 .cf-result { background-color: #f8f9fa; }
 .table-sm th, .table-sm td { padding: 0.5rem; }
@@ -135,14 +135,14 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Filter gejala
-    const filterSelect = document.getElementById('filterGejala');
-    const gejalaItems = document.querySelectorAll('.gejala-item');
+    // Filter penyakit
+    const filterSelect = document.getElementById('filterPenyakit');
+    const penyakitItems = document.querySelectorAll('.penyakit-item');
     
     filterSelect.addEventListener('change', function() {
         const selectedId = this.value;
-        gejalaItems.forEach(item => {
-            if (!selectedId || item.dataset.gejalaId === selectedId) {
+        penyakitItems.forEach(item => {
+            if (!selectedId || item.dataset.penyakitId === selectedId) {
                 item.style.display = 'block';
             } else {
                 item.style.display = 'none';
@@ -150,8 +150,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Toggle expand/collapse per gejala
-    document.querySelectorAll('.toggle-gejala').forEach(btn => {
+    // Toggle expand/collapse per penyakit
+    document.querySelectorAll('.toggle-penyakit').forEach(btn => {
         btn.addEventListener('click', function() {
             const targetId = this.dataset.target;
             const content = document.getElementById(targetId);
@@ -204,12 +204,12 @@ document.addEventListener('DOMContentLoaded', function() {
     let expanded = true;
     toggleBtn.addEventListener('click', function() {
         const icon = this.querySelector('i');
-        const allContents = document.querySelectorAll('[id^="gejala-"]');
+        const allContents = document.querySelectorAll('[id^="penyakit-"]');
         
         if (expanded) {
             allContents.forEach(content => {
                 content.style.display = 'none';
-                const btn = document.querySelector(`.toggle-gejala[data-target="${content.id}"] i`);
+                const btn = document.querySelector(`.toggle-penyakit[data-target="${content.id}"] i`);
                 if (btn) btn.classList.replace('bi-chevron-up', 'bi-chevron-down');
             });
             icon.classList.replace('bi-arrows-expand', 'bi-arrows-collapse');
@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             allContents.forEach(content => {
                 content.style.display = 'block';
-                const btn = document.querySelector(`.toggle-gejala[data-target="${content.id}"] i`);
+                const btn = document.querySelector(`.toggle-penyakit[data-target="${content.id}"] i`);
                 if (btn) btn.classList.replace('bi-chevron-down', 'bi-chevron-up');
             });
             icon.classList.replace('bi-arrows-collapse', 'bi-arrows-expand');

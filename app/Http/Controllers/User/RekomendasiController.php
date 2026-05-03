@@ -238,6 +238,12 @@ class RekomendasiController extends Controller
             $cfValue = (float) data_get($item, 'cf_rekomendasi', data_get($item, 'vi', 0));
             $cfPercentage = (float) data_get($item, 'cf_percentage', 0);
             
+            // Ekstrak MB/MD dari cf_meta jika ada
+            $cfMeta = data_get($item, 'cf_meta', []);
+            $mbPenyakit = (float) data_get($cfMeta, 'mb_penyakit', 0);
+            $mdPenyakit = (float) data_get($cfMeta, 'md_penyakit', 0);
+            $cfPenyakit = data_get($cfMeta, 'cf_penyakit', null);
+            
             $productData = [
                 'kode' => data_get($item, 'kode'),
                 'nama' => data_get($item, 'nama'),
@@ -249,6 +255,9 @@ class RekomendasiController extends Controller
                         'nama_gejala' => data_get($symptom, 'nama_gejala'),
                     ];
                 })->toArray(),
+                'mb_penyakit' => $mbPenyakit,
+                'md_penyakit' => $mdPenyakit,
+                'cf_penyakit' => $cfPenyakit,
             ];
             
             // Tambahkan field spesifik pupuk
@@ -290,6 +299,7 @@ class RekomendasiController extends Controller
                 'cf_percentage' => $cfPercentage,
                 'adjustment_info' => [],
                 'interpretation' => data_get($item, 'interpretation', []),
+                'cf_meta' => $cfMeta,
                 $type => (object) $productData,
             ];
         })->values();
