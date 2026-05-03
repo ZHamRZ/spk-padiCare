@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Gejala;
+use App\Models\Penyakit;
 use App\Models\Pupuk;
 use App\Models\Pestisida;
 use Illuminate\Support\Collection;
@@ -10,8 +10,14 @@ use Illuminate\Support\Collection;
 /**
  * FertilizerPesticideRecommendationEngine
  * 
- * Engine khusus untuk rekomendasi pupuk dan pestisida menggunakan metode Certainty Factor (CF)
+ * Engine khusus untuk rekomendasi pupuk dan pestisida berdasarkan PENYAKIT menggunakan metode Certainty Factor (CF)
  * dengan memperhatikan perbedaan makna antara penyebab (pupuk) dan solusi (pestisida).
+ * 
+ * PERUBAHAN LOGIKA (GEJALA → PENYAKIT):
+ * =====================================
+ * - Sebelumnya: Rekomendasi dihitung berdasarkan relasi gejala-pupuk dan gejala-pestisida
+ * - Sekarang: Rekomendasi dihitung berdasarkan relasi penyakit-pupuk dan penyakit-pestisida
+ * - Gejala hanya sebagai faktor kelengkapan diagnosis, bukan dasar rekomendasi pupuk/pestisida
  * 
  * KONSEP DASAR:
  * =============
@@ -23,23 +29,17 @@ use Illuminate\Support\Collection;
  * 
  * PERBEDAAN MAKNA DATA:
  * =====================
- * A. PUPUK (SEBAGAI PENYEBAB)
- *    - CF menunjukkan seberapa besar pupuk menyebabkan gejala
- *    - CF positif → pupuk memperparah kondisi (tidak direkomendasikan)
- *    - CF negatif → pupuk tidak menyebabkan atau membantu (direkomendasikan)
+ * A. PUPUK (SEBAGAI PENYEBAB/PENCEGAH)
+ *    - CF menunjukkan seberapa besar pupuk mencegah/menyebabkan penyakit
+ *    - CF positif → pupuk tidak cocok untuk penyakit ini (tidak direkomendasikan)
+ *    - CF negatif → pupuk cocok untuk penyakit ini (direkomendasikan)
  *    - Transformasi: CF_rekomendasi = -CF_penyebab
  * 
- * B. PESTISIDA (SEBAGAI SOLUSI)
- *    - CF menunjukkan efektivitas terhadap gejala
+ * B. PESTISIDA (SEBAGAI SOLUSI/PENGOBATAN)
+ *    - CF menunjukkan efektivitas terhadap penyakit
  *    - CF positif → efektif (direkomendasikan)
  *    - CF negatif → tidak efektif (tidak direkomendasikan)
  *    - Tidak ada transformasi: CF_rekomendasi = CF_asli
- * 
- * RUMUS KOMBINASI CF MULTI-GEJALA:
- * =================================
- * - Jika kedua CF positif: CFcombine = CF1 + CF2 * (1 - CF1)
- * - Jika kedua CF negatif: CFcombine = CF1 + CF2 * (1 + CF1)
- * - Jika berbeda tanda: CFcombine = (CF1 + CF2) / (1 - min(|CF1|, |CF2|))
  */
 class FertilizerPesticideRecommendationEngine
 {
@@ -48,86 +48,38 @@ class FertilizerPesticideRecommendationEngine
     ) {}
 
     /**
-     * Hitung rekomendasi pupuk berdasarkan gejala yang dipilih
-     * 
-     * @param array $symptomIds ID gejala yang dipilih user
-     * @return array Hasil rekomendasi dengan CF yang sudah ditransformasi
+     * Hitung rekomendasi pupuk berdasarkan PENYAKIT yang terdiagnosis
      */
-    public function calculateFertilizerRecommendations(array $symptomIds): array
+    public function calculateFertilizerRecommendations(int $diseaseId, array $symptomIds = []): array
     {
-        if (empty($symptomIds)) {
+        $disease = Penyakit::with([
+            'pupuk' => function ($query) {
+                $query->withPivot(['mb', 'md'])
+                    ->orderBy('pupuk.kode');
+            }
+        ])->find($diseaseId);
+
+        if (!$disease || $disease->pupuk->isEmpty()) {
             return [];
         }
 
-        $symptomIds = collect($symptomIds)
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values()
-            ->all();
-
-        // Load semua pupuk yang memiliki relasi dengan gejala terpilih
-        $fertilizers = Pupuk::with([
-            'gejala' => function ($query) use ($symptomIds) {
-                $query->whereIn('gejala.id', $symptomIds)
-                    ->withPivot(['mb', 'md'])
-                    ->orderBy('gejala.kode');
-            }
-        ])
-        ->whereHas('gejala', function ($query) use ($symptomIds) {
-            $query->whereIn('gejala.id', $symptomIds);
-        })
-        ->get();
-
         $recommendations = [];
 
-        foreach ($fertilizers as $fertilizer) {
-            $matchedSymptoms = $fertilizer->gejala;
+        foreach ($disease->pupuk as $pivotData) {
+            $fertilizer = $pivotData;
+            
+            $mb = (float) ($pivotData->pivot->mb ?? 0.7);
+            $md = (float) ($pivotData->pivot->md ?? 0.1);
 
-            if ($matchedSymptoms->isEmpty()) {
-                continue;
+            if ($mb + $md > 1.0) {
+                $total = $mb + $md;
+                $mb = $mb / $total;
+                $md = $md / $total;
             }
 
-            // Hitung CF penyebab dari semua gejala yang cocok
-            $cfValues = [];
-            $symptomDetails = [];
-
-            foreach ($matchedSymptoms as $symptom) {
-                $mb = (float) ($symptom->pivot->mb ?? 0.7);
-                $md = (float) ($symptom->pivot->md ?? 0.1);
-
-                // Validasi konsistensi MB dan MD
-                if ($mb + $md > 1.0) {
-                    $total = $mb + $md;
-                    $mb = $mb / $total;
-                    $md = $md / $total;
-                }
-
-                // CF = MB - MD (ini adalah CF penyebab)
-                $cfPenyebab = $this->cfEngine->calculateCf($mb, $md);
-
-                $cfValues[] = $cfPenyebab;
-                $symptomDetails[] = [
-                    'id' => $symptom->id,
-                    'kode' => $symptom->kode,
-                    'nama_gejala' => $symptom->nama_gejala,
-                    'mb' => round($mb, 3),
-                    'md' => round($md, 3),
-                    'cf_penyebab' => round($cfPenyebab, 4),
-                ];
-            }
-
-            // Kombinasi semua CF penyebab dari multi-gejala
-            $cfPenyebabTotal = $this->cfEngine->combineMultipleCf($cfValues);
-
-            // TRANSFORMASI: CF_rekomendasi = -CF_penyebab
-            // CF negatif (penyebab) → menjadi positif (rekomendasi)
-            // CF positif (penyebab) → menjadi negatif (tidak direkomendasikan)
-            $cfRekomendasi = -$cfPenyebabTotal;
-
-            // Normalisasi ke range [-1, 1]
+            $cfPenyebab = $this->cfEngine->calculateCf($mb, $md);
+            $cfRekomendasi = -$cfPenyebab;
             $cfRekomendasi = $this->cfEngine->normalizeToRange($cfRekomendasi, -1, 1);
-
-            // Dapatkan label interpretasi
             $interpretation = $this->getRecommendationLabel($cfRekomendasi);
 
             $recommendations[] = [
@@ -144,19 +96,22 @@ class FertilizerPesticideRecommendationEngine
                 'frekuensi_aplikasi' => $fertilizer->frekuensi_aplikasi,
                 'efek_penggunaan' => $fertilizer->efek_penggunaan,
                 'gambar_url' => $fertilizer->gambar_url ?? null,
-                'cf_penyebab_total' => round($cfPenyebabTotal, 4),
+                'cf_penyebab' => round($cfPenyebab, 4),
                 'cf_rekomendasi' => round($cfRekomendasi, 4),
                 'cf_percentage' => round($this->cfEngine->toPercentage($cfRekomendasi), 2),
                 'interpretation' => $interpretation,
-                'symptom_details' => $symptomDetails,
-                'matched_symptoms_count' => $matchedSymptoms->count(),
+                'disease_info' => [
+                    'id' => $disease->id,
+                    'nama' => $disease->nama,
+                    'mb' => round($mb, 3),
+                    'md' => round($md, 3),
+                ],
+                'matched_symptoms_count' => count($symptomIds),
             ];
         }
 
-        // Urutkan berdasarkan CF rekomendasi tertinggi
         usort($recommendations, fn ($a, $b) => $b['cf_rekomendasi'] <=> $a['cf_rekomendasi']);
 
-        // Tambahkan peringkat
         foreach ($recommendations as $index => &$item) {
             $item['peringkat'] = $index + 1;
         }
@@ -165,85 +120,38 @@ class FertilizerPesticideRecommendationEngine
     }
 
     /**
-     * Hitung rekomendasi pestisida berdasarkan gejala yang dipilih
-     * 
-     * @param array $symptomIds ID gejala yang dipilih user
-     * @return array Hasil rekomendasi dengan CF asli (tanpa transformasi)
+     * Hitung rekomendasi pestisida berdasarkan PENYAKIT yang terdiagnosis
      */
-    public function calculatePesticideRecommendations(array $symptomIds): array
+    public function calculatePesticideRecommendations(int $diseaseId, array $symptomIds = []): array
     {
-        if (empty($symptomIds)) {
+        $disease = Penyakit::with([
+            'pestisida' => function ($query) {
+                $query->withPivot(['mb', 'md'])
+                    ->orderBy('pestisida.kode');
+            }
+        ])->find($diseaseId);
+
+        if (!$disease || $disease->pestisida->isEmpty()) {
             return [];
         }
 
-        $symptomIds = collect($symptomIds)
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values()
-            ->all();
-
-        // Load semua pestisida yang memiliki relasi dengan gejala terpilih
-        $pesticides = Pestisida::with([
-            'gejala' => function ($query) use ($symptomIds) {
-                $query->whereIn('gejala.id', $symptomIds)
-                    ->withPivot(['mb', 'md'])
-                    ->orderBy('gejala.kode');
-            }
-        ])
-        ->whereHas('gejala', function ($query) use ($symptomIds) {
-            $query->whereIn('gejala.id', $symptomIds);
-        })
-        ->get();
-
         $recommendations = [];
 
-        foreach ($pesticides as $pesticide) {
-            $matchedSymptoms = $pesticide->gejala;
+        foreach ($disease->pestisida as $pivotData) {
+            $pesticide = $pivotData;
+            
+            $mb = (float) ($pivotData->pivot->mb ?? 0.7);
+            $md = (float) ($pivotData->pivot->md ?? 0.1);
 
-            if ($matchedSymptoms->isEmpty()) {
-                continue;
+            if ($mb + $md > 1.0) {
+                $total = $mb + $md;
+                $mb = $mb / $total;
+                $md = $md / $total;
             }
 
-            // Hitung CF solusi dari semua gejala yang cocok
-            $cfValues = [];
-            $symptomDetails = [];
-
-            foreach ($matchedSymptoms as $symptom) {
-                $mb = (float) ($symptom->pivot->mb ?? 0.7);
-                $md = (float) ($symptom->pivot->md ?? 0.1);
-
-                // Validasi konsistensi MB dan MD
-                if ($mb + $md > 1.0) {
-                    $total = $mb + $md;
-                    $mb = $mb / $total;
-                    $md = $md / $total;
-                }
-
-                // CF = MB - MD (ini adalah CF solusi/efektivitas)
-                $cfSolusi = $this->cfEngine->calculateCf($mb, $md);
-
-                $cfValues[] = $cfSolusi;
-                $symptomDetails[] = [
-                    'id' => $symptom->id,
-                    'kode' => $symptom->kode,
-                    'nama_gejala' => $symptom->nama_gejala,
-                    'mb' => round($mb, 3),
-                    'md' => round($md, 3),
-                    'cf_solusi' => round($cfSolusi, 4),
-                ];
-            }
-
-            // Kombinasi semua CF solusi dari multi-gejala
-            $cfSolusiTotal = $this->cfEngine->combineMultipleCf($cfValues);
-
-            // TIDAK ADA TRANSFORMASI untuk pestisida
-            // CF_rekomendasi = CF_asli
-            $cfRekomendasi = $cfSolusiTotal;
-
-            // Normalisasi ke range [-1, 1]
+            $cfSolusi = $this->cfEngine->calculateCf($mb, $md);
+            $cfRekomendasi = $cfSolusi;
             $cfRekomendasi = $this->cfEngine->normalizeToRange($cfRekomendasi, -1, 1);
-
-            // Dapatkan label interpretasi
             $interpretation = $this->getRecommendationLabel($cfRekomendasi);
 
             $recommendations[] = [
@@ -260,19 +168,22 @@ class FertilizerPesticideRecommendationEngine
                 'frekuensi_aplikasi' => $pesticide->frekuensi_aplikasi,
                 'efek_penggunaan' => $pesticide->efek_penggunaan,
                 'gambar_url' => $pesticide->gambar_url ?? null,
-                'cf_solusi_total' => round($cfSolusiTotal, 4),
+                'cf_solusi' => round($cfSolusi, 4),
                 'cf_rekomendasi' => round($cfRekomendasi, 4),
                 'cf_percentage' => round($this->cfEngine->toPercentage($cfRekomendasi), 2),
                 'interpretation' => $interpretation,
-                'symptom_details' => $symptomDetails,
-                'matched_symptoms_count' => $matchedSymptoms->count(),
+                'disease_info' => [
+                    'id' => $disease->id,
+                    'nama' => $disease->nama,
+                    'mb' => round($mb, 3),
+                    'md' => round($md, 3),
+                ],
+                'matched_symptoms_count' => count($symptomIds),
             ];
         }
 
-        // Urutkan berdasarkan CF rekomendasi tertinggi
         usort($recommendations, fn ($a, $b) => $b['cf_rekomendasi'] <=> $a['cf_rekomendasi']);
 
-        // Tambahkan peringkat
         foreach ($recommendations as $index => &$item) {
             $item['peringkat'] = $index + 1;
         }
@@ -281,31 +192,21 @@ class FertilizerPesticideRecommendationEngine
     }
 
     /**
-     * Hitung rekomendasi lengkap (pupuk + pestisida) berdasarkan gejala
-     * 
-     * @param array $symptomIds ID gejala yang dipilih user
-     * @param int|null $topN Batasi hasil top N (default: null = semua)
-     * @param bool $onlyPositive Hanya tampilkan CF > 0
-     * @return array Hasil rekomendasi lengkap
+     * Hitung rekomendasi lengkap (pupuk + pestisida) berdasarkan PENYAKIT
      */
     public function calculateAllRecommendations(
-        array $symptomIds,
+        int $diseaseId,
+        array $symptomIds = [],
         ?int $topN = null,
         bool $onlyPositive = true
     ): array {
-        $fertilizerRecs = $this->calculateFertilizerRecommendations($symptomIds);
-        $pesticideRecs = $this->calculatePesticideRecommendations($symptomIds);
+        $fertilizerRecs = $this->calculateFertilizerRecommendations($diseaseId, $symptomIds);
+        $pesticideRecs = $this->calculatePesticideRecommendations($diseaseId, $symptomIds);
 
-        // Filter hanya CF > 0 jika diminta
         if ($onlyPositive) {
-            $fertilizerRecs = array_filter($fertilizerRecs, fn ($item) => $item['cf_rekomendasi'] > 0);
-            $pesticideRecs = array_filter($pesticideRecs, fn ($item) => $item['cf_rekomendasi'] > 0);
-            
-            // Re-index arrays after filtering
-            $fertilizerRecs = array_values($fertilizerRecs);
-            $pesticideRecs = array_values($pesticideRecs);
+            $fertilizerRecs = array_values(array_filter($fertilizerRecs, fn ($item) => $item['cf_rekomendasi'] > 0));
+            $pesticideRecs = array_values(array_filter($pesticideRecs, fn ($item) => $item['cf_rekomendasi'] > 0));
 
-            // Re-calculate peringkat setelah filter
             foreach ($fertilizerRecs as $index => &$item) {
                 $item['peringkat'] = $index + 1;
             }
@@ -314,16 +215,24 @@ class FertilizerPesticideRecommendationEngine
             }
         }
 
-        // Batasi top N jika diminta
         if ($topN !== null && $topN > 0) {
             $fertilizerRecs = array_slice($fertilizerRecs, 0, $topN);
             $pesticideRecs = array_slice($pesticideRecs, 0, $topN);
         }
 
+        $disease = Penyakit::find($diseaseId);
+
         return [
             'pupuk' => $fertilizerRecs,
             'pestisida' => $pesticideRecs,
+            'disease' => $disease ? [
+                'id' => $disease->id,
+                'nama' => $disease->nama,
+                'deskripsi' => $disease->deskripsi,
+                'gambar_url' => $disease->gambar_url,
+            ] : null,
             'summary' => [
+                'disease_id' => $diseaseId,
                 'total_gejala' => count($symptomIds),
                 'total_pupuk_direkomendasikan' => count($fertilizerRecs),
                 'total_pestisida_direkomendasikan' => count($pesticideRecs),
@@ -331,18 +240,15 @@ class FertilizerPesticideRecommendationEngine
                 'top_n' => $topN,
             ],
             'method_info' => [
+                'basis_rekomendasi' => 'Penyakit (bukan gejala)',
                 'pupuk_transformation' => 'CF_rekomendasi = -CF_penyebab',
                 'pestisida_transformation' => 'CF_rekomendasi = CF_solusi (tanpa perubahan)',
-                'combination_formula' => 'CFcombine = CF1 + CF2 * (1 - CF1) untuk same sign',
             ],
         ];
     }
 
     /**
      * Dapatkan label rekomendasi berdasarkan nilai CF
-     * 
-     * @param float $cf Nilai Certainty Factor
-     * @return array Label, color, dan description
      */
     public function getRecommendationLabel(float $cf): array
     {
@@ -353,7 +259,7 @@ class FertilizerPesticideRecommendationEngine
                 'label' => 'Sangat Direkomendasikan',
                 'color' => 'success',
                 'icon' => '✓✓',
-                'description' => 'Rekomendasi sangat kuat berdasarkan analisis gejala.',
+                'description' => 'Rekomendasi sangat kuat berdasarkan analisis penyakit.',
                 'badge_class' => 'bg-success',
             ];
         } elseif ($cf > 0.4) {
@@ -361,7 +267,7 @@ class FertilizerPesticideRecommendationEngine
                 'label' => 'Direkomendasikan',
                 'color' => 'primary',
                 'icon' => '✓',
-                'description' => 'Rekomendasi kuat berdasarkan analisis gejala.',
+                'description' => 'Rekomendasi kuat berdasarkan analisis penyakit.',
                 'badge_class' => 'bg-primary',
             ];
         } elseif ($cf > 0.1) {
@@ -385,224 +291,9 @@ class FertilizerPesticideRecommendationEngine
                 'label' => 'Tidak Direkomendasikan',
                 'color' => 'danger',
                 'icon' => '✗',
-                'description' => 'Tidak direkomendasikan berdasarkan analisis gejala.',
+                'description' => 'Tidak direkomendasikan berdasarkan analisis penyakit.',
                 'badge_class' => 'bg-danger',
             ];
         }
-    }
-
-    /**
-     * Hitung detail CF untuk satu pupuk tertentu
-     * 
-     * @param int $fertilizerId ID pupuk
-     * @param array $symptomIds ID gejala yang dipilih
-     * @return array|null Detail CF atau null jika tidak ada relasi
-     */
-    public function calculateSingleFertilizerDetail(int $fertilizerId, array $symptomIds): ?array
-    {
-        $fertilizer = Pupuk::with([
-            'gejala' => function ($query) use ($symptomIds) {
-                $query->whereIn('gejala.id', $symptomIds)
-                    ->withPivot(['mb', 'md']);
-            }
-        ])->find($fertilizerId);
-
-        if (!$fertilizer || $fertilizer->gejala->isEmpty()) {
-            return null;
-        }
-
-        $cfValues = [];
-        $symptomDetails = [];
-
-        foreach ($fertilizer->gejala as $symptom) {
-            $mb = (float) ($symptom->pivot->mb ?? 0.7);
-            $md = (float) ($symptom->pivot->md ?? 0.1);
-
-            if ($mb + $md > 1.0) {
-                $total = $mb + $md;
-                $mb = $mb / $total;
-                $md = $md / $total;
-            }
-
-            $cfPenyebab = $this->cfEngine->calculateCf($mb, $md);
-            $cfValues[] = $cfPenyebab;
-
-            $symptomDetails[] = [
-                'id' => $symptom->id,
-                'kode' => $symptom->kode,
-                'nama_gejala' => $symptom->nama_gejala,
-                'mb' => round($mb, 3),
-                'md' => round($md, 3),
-                'cf_penyebab' => round($cfPenyebab, 4),
-            ];
-        }
-
-        $cfPenyebabTotal = $this->cfEngine->combineMultipleCf($cfValues);
-        $cfRekomendasi = -$cfPenyebabTotal;
-        $cfRekomendasi = $this->cfEngine->normalizeToRange($cfRekomendasi, -1, 1);
-
-        return [
-            'fertilizer' => [
-                'id' => $fertilizer->id,
-                'kode' => $fertilizer->kode,
-                'nama' => $fertilizer->nama,
-            ],
-            'cf_penyebab_total' => round($cfPenyebabTotal, 4),
-            'cf_rekomendasi' => round($cfRekomendasi, 4),
-            'interpretation' => $this->getRecommendationLabel($cfRekomendasi),
-            'symptom_details' => $symptomDetails,
-            'calculation_steps' => $this->buildCalculationSteps($cfValues, 'pupuk'),
-        ];
-    }
-
-    /**
-     * Hitung detail CF untuk satu pestisida tertentu
-     * 
-     * @param int $pesticideId ID pestisida
-     * @param array $symptomIds ID gejala yang dipilih
-     * @return array|null Detail CF atau null jika tidak ada relasi
-     */
-    public function calculateSinglePesticideDetail(int $pesticideId, array $symptomIds): ?array
-    {
-        $pesticide = Pestisida::with([
-            'gejala' => function ($query) use ($symptomIds) {
-                $query->whereIn('gejala.id', $symptomIds)
-                    ->withPivot(['mb', 'md']);
-            }
-        ])->find($pesticideId);
-
-        if (!$pesticide || $pesticide->gejala->isEmpty()) {
-            return null;
-        }
-
-        $cfValues = [];
-        $symptomDetails = [];
-
-        foreach ($pesticide->gejala as $symptom) {
-            $mb = (float) ($symptom->pivot->mb ?? 0.7);
-            $md = (float) ($symptom->pivot->md ?? 0.1);
-
-            if ($mb + $md > 1.0) {
-                $total = $mb + $md;
-                $mb = $mb / $total;
-                $md = $md / $total;
-            }
-
-            $cfSolusi = $this->cfEngine->calculateCf($mb, $md);
-            $cfValues[] = $cfSolusi;
-
-            $symptomDetails[] = [
-                'id' => $symptom->id,
-                'kode' => $symptom->kode,
-                'nama_gejala' => $symptom->nama_gejala,
-                'mb' => round($mb, 3),
-                'md' => round($md, 3),
-                'cf_solusi' => round($cfSolusi, 4),
-            ];
-        }
-
-        $cfSolusiTotal = $this->cfEngine->combineMultipleCf($cfValues);
-        $cfRekomendasi = $cfSolusiTotal;
-        $cfRekomendasi = $this->cfEngine->normalizeToRange($cfRekomendasi, -1, 1);
-
-        return [
-            'pesticide' => [
-                'id' => $pesticide->id,
-                'kode' => $pesticide->kode,
-                'nama' => $pesticide->nama,
-            ],
-            'cf_solusi_total' => round($cfSolusiTotal, 4),
-            'cf_rekomendasi' => round($cfRekomendasi, 4),
-            'interpretation' => $this->getRecommendationLabel($cfRekomendasi),
-            'symptom_details' => $symptomDetails,
-            'calculation_steps' => $this->buildCalculationSteps($cfValues, 'pestisida'),
-        ];
-    }
-
-    /**
-     * Bangun langkah-langkah perhitungan untuk transparansi
-     */
-    private function buildCalculationSteps(array $cfValues, string $type): array
-    {
-        $steps = [];
-        
-        if (empty($cfValues)) {
-            return $steps;
-        }
-
-        $steps[] = [
-            'step' => 1,
-            'description' => 'Hitung CF individual untuk setiap gejala',
-            'formula' => 'CF = MB - MD',
-            'values' => $cfValues,
-        ];
-
-        if (count($cfValues) > 1) {
-            $combined = $cfValues[0];
-            $combinationSteps = [];
-
-            for ($i = 1; $i < count($cfValues); $i++) {
-                $cf1 = $combined;
-                $cf2 = $cfValues[$i];
-                
-                if ($cf1 >= 0 && $cf2 >= 0) {
-                    $formula = 'CF1 + CF2 * (1 - CF1)';
-                    $result = $cf1 + $cf2 * (1 - $cf1);
-                } elseif ($cf1 <= 0 && $cf2 <= 0) {
-                    $formula = 'CF1 + CF2 * (1 + CF1)';
-                    $result = $cf1 + $cf2 * (1 + $cf1);
-                } else {
-                    $minAbs = min(abs($cf1), abs($cf2));
-                    $formula = '(CF1 + CF2) / (1 - min(|CF1|, |CF2|))';
-                    $denominator = 1 - $minAbs;
-                    $result = $denominator != 0 ? ($cf1 + $cf2) / $denominator : 0;
-                }
-
-                $combinationSteps[] = [
-                    'iteration' => $i,
-                    'cf1' => round($cf1, 4),
-                    'cf2' => round($cf2, 4),
-                    'formula' => $formula,
-                    'result' => round($result, 4),
-                ];
-
-                $combined = $result;
-            }
-
-            $steps[] = [
-                'step' => 2,
-                'description' => 'Kombinasi CF secara sequential',
-                'combination_steps' => $combinationSteps,
-                'final_combined' => round($combined, 4),
-            ];
-        }
-
-        if ($type === 'pupuk') {
-            $finalCf = end($cfValues);
-            if (count($cfValues) > 1) {
-                // Recalculate to get final combined
-                $finalCf = $this->cfEngine->combineMultipleCf($cfValues);
-            }
-            $steps[] = [
-                'step' => 3,
-                'description' => 'Transformasi CF untuk pupuk (penyebab → rekomendasi)',
-                'formula' => 'CF_rekomendasi = -CF_penyebab',
-                'cf_penyebab' => round($finalCf, 4),
-                'cf_rekomendasi' => round(-$finalCf, 4),
-            ];
-        } else {
-            $finalCf = end($cfValues);
-            if (count($cfValues) > 1) {
-                $finalCf = $this->cfEngine->combineMultipleCf($cfValues);
-            }
-            $steps[] = [
-                'step' => 3,
-                'description' => 'CF pestisida langsung digunakan (tanpa transformasi)',
-                'formula' => 'CF_rekomendasi = CF_solusi',
-                'cf_rekomendasi' => round($finalCf, 4),
-            ];
-        }
-
-        return $steps;
     }
 }
