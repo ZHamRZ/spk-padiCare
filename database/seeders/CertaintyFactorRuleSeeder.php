@@ -83,6 +83,9 @@ class CertaintyFactorRuleSeeder extends Seeder
         );
 
         $this->command?->info('Semua aturan CF pupuk dan pestisida per gejala berhasil diisi.');
+
+        // Seed relasi spesifik penyakit-pupuk dan penyakit-pestisida
+        $this->call(PenyakitProdukCfSeeder::class);
     }
 
     private function resolveSymptomCfPairDefault(): array
