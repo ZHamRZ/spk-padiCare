@@ -4,8 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Gejala;
-use App\Models\GejalaPestisida;
-use App\Models\GejalaPupuk;
 use App\Models\Penyakit;
 use App\Models\PenyakitPupuk;
 use App\Models\PenyakitPestisida;
@@ -59,14 +57,14 @@ class RatingController extends Controller
 
     public function pestisida()
     {
-        $gejala = Gejala::orderBy('kode')->get();
+        $penyakit = Penyakit::orderBy('kode')->get();
         $pestisida = Pestisida::orderBy('kode')->get();
         $cfReady = CfSchema::hasPestisidaRuleTable();
         $rules = $cfReady
-            ? GejalaPestisida::all()->keyBy(fn ($item) => "{$item->id_gejala}_{$item->id_pestisida}")
+            ? PenyakitPestisida::all()->keyBy(fn ($item) => "{$item->id_penyakit}_{$item->id_pestisida}")
             : collect();
 
-        return view('admin.rating.pestisida', compact('gejala', 'pestisida', 'rules', 'cfReady'));
+        return view('admin.rating.pestisida', compact('penyakit', 'pestisida', 'rules', 'cfReady'));
     }
 
     public function simpanPestisida(Request $request)
@@ -82,10 +80,10 @@ class RatingController extends Controller
             'rules.*.*.md' => 'required|numeric|min:0|max:1',
         ]);
 
-        foreach ($request->rules as $idGejala => $items) {
+        foreach ($request->rules as $idPenyakit => $items) {
             foreach ($items as $idPestisida => $rule) {
-                GejalaPestisida::updateOrCreate(
-                    ['id_gejala' => $idGejala, 'id_pestisida' => $idPestisida],
+                PenyakitPestisida::updateOrCreate(
+                    ['id_penyakit' => $idPenyakit, 'id_pestisida' => $idPestisida],
                     [
                         'mb' => round((float) $rule['mb'], 3),
                         'md' => round((float) $rule['md'], 3),
