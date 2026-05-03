@@ -74,23 +74,18 @@ class CertaintyFactorService
             ->values()
             ->all();
 
-        // Jika ada gejala terpilih, gunakan FertilizerPesticideRecommendationEngine
-        // untuk menghitung rekomendasi dengan logika CF yang benar
-        if (!empty($gejalaIds)) {
-            $fpResult = $this->fpEngine->calculateAllRecommendations(
-                $gejalaIds,
-                topN: null,
-                onlyPositive: false // Tampilkan semua untuk preview lengkap
-            );
-            
-            // Format hasil agar kompatibel dengan struktur yang diharapkan
-            $pupukFormatted = $this->formatFpResultToLegacy($fpResult['pupuk'], 'pupuk');
-            $pestisidaFormatted = $this->formatFpResultToLegacy($fpResult['pestisida'], 'pestisida');
-        } else {
-            // Fallback ke metode lama jika tidak ada gejala
-            $pupukFormatted = $this->hitungAlternatif('pupuk', $idPenyakit, $kriteria, $preferensi);
-            $pestisidaFormatted = $this->hitungAlternatif('pestisida', $idPenyakit, $kriteria, $preferensi);
-        }
+        // Gunakan FertilizerPesticideRecommendationEngine untuk menghitung rekomendasi
+        // berdasarkan PENYAKIT dengan gejala sebagai faktor kelengkapan diagnosis
+        $fpResult = $this->fpEngine->calculateAllRecommendations(
+            $idPenyakit,        // Parameter 1: Disease ID (basis rekomendasi)
+            $gejalaIds,         // Parameter 2: Symptom IDs (untuk kelengkapan diagnosis)
+            topN: null,
+            onlyPositive: false // Tampilkan semua untuk preview lengkap
+        );
+        
+        // Format hasil agar kompatibel dengan struktur yang diharapkan
+        $pupukFormatted = $this->formatFpResultToLegacy($fpResult['pupuk'], 'pupuk');
+        $pestisidaFormatted = $this->formatFpResultToLegacy($fpResult['pestisida'], 'pestisida');
 
         return [
             'rumus' => [
@@ -108,13 +103,20 @@ class CertaintyFactorService
     
     /**
      * Format hasil dari FertilizerPesticideRecommendationEngine ke format legacy
+     * 
+     * LOGIKA BARU: Rekomendasi berbasis PENYAKIT, bukan gejala
+     * - Gejala hanya digunakan sebagai faktor kelengkapan diagnosis
+     * - CF dihitung berdasarkan relasi penyakit-pupuk dan penyakit-pestisida
      */
     private function formatFpResultToLegacy(array $fpResults, string $type): array
     {
         return collect($fpResults)->map(function ($item) use ($type) {
+            // Metadata dasar
             $meta = [
                 'gambar_url' => data_get($item, 'gambar_url'),
-                'gejala_cocok' => data_get($item, 'symptom_details', []),
+                // Gejala yang cocok sekarang hanya sebagai informasi tambahan
+                'gejala_cocok' => data_get($item, 'matched_symptoms', []),
+                'basis_rekomendasi' => 'penyakit', // Tandai bahwa rekomendasi berbasis penyakit
             ];
             
             if ($type === 'pupuk') {
@@ -125,6 +127,9 @@ class CertaintyFactorService
                     'takaran' => data_get($item, 'takaran'),
                     'efek_penggunaan' => data_get($item, 'efek_penggunaan'),
                     'cara_aplikasi' => data_get($item, 'cara_aplikasi'),
+                    // Informasi disease-specific untuk pupuk
+                    'cf_penyebab' => data_get($item, 'cf_penyebab'),
+                    'disease_info' => data_get($item, 'disease_info'),
                 ]);
             } else {
                 $meta = array_merge($meta, [
@@ -133,17 +138,10 @@ class CertaintyFactorService
                     'dosis' => data_get($item, 'dosis'),
                     'efek_penggunaan' => data_get($item, 'efek_penggunaan'),
                     'cara_aplikasi' => data_get($item, 'cara_aplikasi'),
+                    // Informasi disease-specific untuk pestisida
+                    'cf_solusi' => data_get($item, 'cf_solusi'),
+                    'disease_info' => data_get($item, 'disease_info'),
                 ]);
-            }
-            
-            // Ambil symptom details untuk ekstrak MB/MD dari gejala
-            $symptomDetails = data_get($item, 'symptom_details', []);
-            $mbGejala = 0;
-            $mdGejala = 0;
-            if (!empty($symptomDetails) && is_array($symptomDetails)) {
-                $firstSymptom = reset($symptomDetails);
-                $mbGejala = (float) data_get($firstSymptom, 'mb', 0);
-                $mdGejala = (float) data_get($firstSymptom, 'md', 0);
             }
             
             return [
@@ -154,17 +152,17 @@ class CertaintyFactorService
                 'peringkat' => data_get($item, 'peringkat'),
                 'meta' => $meta,
                 'cf_meta' => [
-                    'mb_awal' => $mbGejala,
-                    'md_awal' => $mdGejala,
-                    'cf_awal' => $type === 'pupuk' 
-                        ? data_get($item, 'cf_penyebab_total', 0) 
-                        : data_get($item, 'cf_solusi_total', 0),
-                    'mb_penyakit' => data_get($item, 'mb_penyakit', 0),
-                    'md_penyakit' => data_get($item, 'md_penyakit', 0),
-                    'cf_penyakit' => data_get($item, 'cf_penyakit_spesifik', null),
-                    'mb_akhir' => $mbGejala,
-                    'md_akhir' => $mdGejala,
-                    'cf_akhir' => data_get($item, 'cf_rekomendasi'),
+                    // CF sudah ditransformasi dengan benar oleh FertilizerPesticideRecommendationEngine
+                    'cf_rekomendasi' => data_get($item, 'cf_rekomendasi'),
+                    'cf_percentage' => data_get($item, 'cf_percentage'),
+                    'interpretation' => data_get($item, 'interpretation'),
+                    // Informasi penyakit yang mendasari rekomendasi
+                    'disease_id' => data_get($item, 'disease_info.id'),
+                    'disease_name' => data_get($item, 'disease_info.nama'),
+                    // Transformasi yang diterapkan
+                    'transformation' => $type === 'pupuk' 
+                        ? 'CF_rekomendasi = -CF_penyebab (negasi)' 
+                        : 'CF_rekomendasi = CF_solusi (tanpa perubahan)',
                 ],
                 'interpretation' => data_get($item, 'interpretation'),
             ];

@@ -14,10 +14,14 @@ class RecommendationService
     
     /**
      * Preview rekomendasi dengan logika CF yang benar
+     * 
+     * LOGIKA BARU: Rekomendasi berbasis PENYAKIT, bukan gejala
+     * - Gejala hanya sebagai faktor kelengkapan diagnosis
+     * - CF dihitung berdasarkan relasi penyakit-pupuk dan penyakit-pestisida
      */
     public function previewForDisease(int $diseaseId, array $preferences = []): array
     {
-        // Ekstrak gejala terpilih dari preferensi
+        // Ekstrak gejala terpilih dari preferensi (hanya untuk kelengkapan diagnosis)
         $gejalaIds = collect($preferences['gejala_terpilih'] ?? [])
             ->pluck('id')
             ->map(fn($id) => (int) $id)
@@ -25,18 +29,15 @@ class RecommendationService
             ->values()
             ->all();
         
-        // Jika ada gejala terpilih, gunakan FertilizerPesticideRecommendationEngine
-        // untuk mendapatkan rekomendasi dengan logika CF yang benar
-        if (!empty($gejalaIds)) {
-            return $this->fpEngine->calculateAllRecommendations(
-                $gejalaIds,
-                topN: null,
-                onlyPositive: true
-            );
-        }
-        
-        // Fallback ke metode lama jika tidak ada gejala
-        return $this->cfService->preview($diseaseId, $preferences);
+        // Gunakan FertilizerPesticideRecommendationEngine dengan parameter yang benar
+        // Parameter 1: diseaseId (basis rekomendasi)
+        // Parameter 2: symptomIds (untuk kelengkapan diagnosis)
+        return $this->fpEngine->calculateAllRecommendations(
+            $diseaseId,       // Disease ID sebagai basis rekomendasi
+            $gejalaIds,       // Symptom IDs untuk kelengkapan diagnosis
+            topN: null,
+            onlyPositive: true
+        );
     }
 
     public function saveForUser(int $userId, int $diseaseId, array $preferences = []): Rekomendasi
@@ -53,7 +54,11 @@ class RecommendationService
      * Hitung rekomendasi dengan integrasi preferensi user yang mempengaruhi CF
      * Menggunakan FertilizerPesticideRecommendationEngine untuk logika CF yang benar
      * 
-     * @param int $diseaseId ID penyakit
+     * LOGIKA BARU: Rekomendasi berbasis PENYAKIT, bukan gejala
+     * - Gejala hanya sebagai faktor kelengkapan diagnosis
+     * - CF dihitung berdasarkan relasi penyakit-pupuk dan penyakit-pestisida
+     * 
+     * @param int $diseaseId ID penyakit (basis utama rekomendasi)
      * @param string $presetType Tipe preset preferensi
      * @param array $criteriaWeights Bobot kriteria custom dari user
      * @param array $symptomWeights Bobot keyakinan user untuk setiap gejala
@@ -64,59 +69,27 @@ class RecommendationService
         array $criteriaWeights = [],
         array $symptomWeights = []
     ): array {
-        // Ekstrak gejala terpilih dari symptom weights atau preferensi lain
+        // Ekstrak gejala terpilih dari symptom weights (hanya untuk kelengkapan diagnosis)
         $gejalaIds = array_keys($symptomWeights);
         
-        // Jika ada gejala, gunakan FertilizerPesticideRecommendationEngine
-        if (!empty($gejalaIds)) {
-            // Hitung rekomendasi dasar dengan fpEngine (logika CF sudah benar)
-            $fpResult = $this->fpEngine->calculateAllRecommendations(
-                $gejalaIds,
-                topN: null,
-                onlyPositive: true
-            );
-            
-            // Apply preference adjustment jika diperlukan
-            // Catatan: adjustment ini bersifat opsional dan tidak mengubah logika dasar CF
-            if ($presetType !== 'seimbang' || !empty($criteriaWeights)) {
-                $fpResult = $this->applyPreferenceToFPResult($fpResult, $presetType, $criteriaWeights, $symptomWeights);
-            }
-            
-            return $fpResult;
+        // Gunakan FertilizerPesticideRecommendationEngine dengan parameter yang benar
+        // Parameter 1: diseaseId (basis rekomendasi)
+        // Parameter 2: symptomIds (untuk kelengkapan diagnosis)
+        $fpResult = $this->fpEngine->calculateAllRecommendations(
+            $diseaseId,       // Disease ID sebagai basis rekomendasi
+            $gejalaIds,       // Symptom IDs untuk kelengkapan diagnosis
+            topN: null,
+            onlyPositive: true
+        );
+        
+        // Apply preference adjustment jika diperlukan
+        // Catatan: adjustment ini bersifat opsional dan tidak mengubah logika dasar CF
+        if ($presetType !== 'seimbang' || !empty($criteriaWeights)) {
+            $fpResult = $this->applyPreferenceToFPResult($fpResult, $presetType, $criteriaWeights, $symptomWeights);
         }
         
-        // Fallback ke metode lama jika tidak ada gejala
-        $baseResult = $this->cfService->preview($diseaseId, [
-            'preset' => $presetType,
-            'kriteria' => $criteriaWeights,
-            'gejala_weights' => $symptomWeights,
-        ]);
-
-        // Apply preference adjustment ke setiap alternatif pupuk
-        $adjustedPupuk = collect($baseResult['pupuk'])->map(function ($item) use ($presetType, $criteriaWeights, $symptomWeights) {
-            $baseCf = $item['vi'];
-            
-            // Apply preference adjustment berdasarkan preset dan kriteria
-            $adjustedCf = $this->cfEngine->applyPreferenceAdjustment(
-                $baseCf,
-                $presetType,
-                $criteriaWeights,
-                ['harga' => data_get($item, 'meta.harga_per_kg', 0)]
-            );
-            
-            // Tambahkan adjustment dari symptom weights jika ada
-            if (!empty($symptomWeights)) {
-                $symptomAdjustment = $this->calculateSymptomWeightAdjustment(
-                    $item['id'],
-                    $symptomWeights,
-                    data_get($item, 'meta.gejala_cocok', [])
-                );
-                $adjustedCf = $this->cfEngine->normalizeToRange($adjustedCf + $symptomAdjustment, -1, 1);
-            }
-
-            $item['vi'] = $adjustedCf;
-            $item['cf_akhir'] = $adjustedCf;
-            $item['preference_applied'] = true;
+        return $fpResult;
+    }
             $item['adjustment_info'] = [
                 'preset_boost' => round($adjustedCf - $baseCf, 4),
                 'symptom_adjustment' => !empty($symptomWeights) ? round($symptomAdjustment, 4) : 0,
