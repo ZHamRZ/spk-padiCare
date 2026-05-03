@@ -224,7 +224,7 @@ Disarankan buat service baru:
 
 - `app/Services/CertaintyFactorService.php`
 
-Service ini menggantikan peran `SAWService`.
+Service ini menggantikan peran `CertaintyFactorService`.
 
 ### Struktur service
 
@@ -778,7 +778,7 @@ Secara UX, form yang dipilih user tetap bisa sama.
 
 1. Tambahkan migration tabel rule CF.
 2. Buat `CertaintyFactorService`.
-3. Ganti dependency `SAWService` di controller user dan admin.
+3. Ganti dependency `CertaintyFactorService` di controller user dan admin.
 4. Ubah diagnosa penyakit agar memakai `diagnose()`.
 5. Ubah admin input rating menjadi input `mb/md`.
 6. Ubah label di view dari SAW menjadi CF.
@@ -792,7 +792,7 @@ Secara UX, form yang dipilih user tetap bisa sama.
 
 ## 12. File Repo Saat Ini yang Paling Relevan untuk Diubah
 
-- `app/Services/SAWService.php`
+- `app/Services/CertaintyFactorService.php`
 - `app/Http/Controllers/User/DiagnosisController.php`
 - `app/Http/Controllers/User/RekomendasiController.php`
 - `app/Http/Controllers/Admin/RiwayatController.php`

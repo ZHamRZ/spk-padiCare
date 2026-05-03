@@ -13,7 +13,8 @@ class KriteriaController extends Controller
     {
         $kriteria = Kriteria::orderBy('kode')->get();
         $averageBobot = $kriteria->avg('bobot') ?? 0;
-        return view('admin.kriteria.index', compact('kriteria', 'averageBobot'));
+        return view('admin.kriteria.index', compact('kriteria', 'averageBobot'))
+            ->with('info', 'Parameter ini digunakan dalam metode Certainty Factor untuk menyesuaikan rekomendasi berdasarkan preferensi pengguna.');
     }
 
     public function updateBulk(Request $request)
@@ -44,17 +45,18 @@ class KriteriaController extends Controller
             DB::commit();
             
             return redirect()->route('admin.kriteria.index')
-                ->with('success', 'Semua parameter prioritas berhasil diperbarui.');
+                ->with('success', '✅ Parameter prioritas Certainty Factor berhasil diperbarui. Nilai ini akan mempengaruhi adjustment MB/MD dalam perhitungan rekomendasi.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->route('admin.kriteria.index')
-                ->with('error', 'Gagal memperbarui data: ' . $e->getMessage());
+                ->with('error', '❌ Gagal memperbarui data: ' . $e->getMessage());
         }
     }
 
     public function edit(Kriteria $kriteria)
     {
-        return view('admin.kriteria.edit', compact('kriteria'));
+        return view('admin.kriteria.edit', compact('kriteria'))
+            ->with('info', 'Edit parameter Certainty Factor individual.');
     }
 
     public function update(Request $request, Kriteria $kriteria)
@@ -65,8 +67,13 @@ class KriteriaController extends Controller
             'bobot'      => 'required|numeric|min:0|max:1',
             'keterangan' => 'nullable|string',
         ]);
-        $kriteria->update($request->only('nama', 'jenis', 'bobot', 'keterangan'));
-        return redirect()->route('admin.kriteria.index')
-            ->with('success', 'Parameter prioritas berhasil diperbarui.');
+        
+        try {
+            $kriteria->update($request->only('nama', 'jenis', 'bobot', 'keterangan'));
+            return redirect()->route('admin.kriteria.index')
+                ->with('success', '✅ Parameter Certainty Factor "' . $kriteria->nama . '" berhasil diperbarui.');
+        } catch (\Exception $e) {
+            return back()->with('error', '❌ Gagal memperbarui: ' . $e->getMessage());
+        }
     }
 }

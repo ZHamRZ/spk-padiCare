@@ -14,7 +14,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
-class SAWService
+class CertaintyFactorService
 {
     public function __construct(
         private CertaintyFactorEngine $cfEngine,

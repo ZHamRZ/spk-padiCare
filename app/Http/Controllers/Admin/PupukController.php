@@ -62,7 +62,7 @@ class PupukController extends Controller
         }
         Pupuk::create($data);
         return redirect()->route('admin.pupuk.index')
-            ->with('success', 'Data pupuk berhasil ditambahkan.');
+            ->with('success', '✅ Data pupuk berhasil ditambahkan.');
     }
 
     public function edit(Pupuk $pupuk)
@@ -107,16 +107,20 @@ class PupukController extends Controller
         }
         $pupuk->update($data);
         return redirect()->route('admin.pupuk.index')
-            ->with('success', 'Data pupuk berhasil diperbarui.');
+            ->with('success', '✅ Data pupuk berhasil diperbarui.');
     }
 
     public function destroy(Pupuk $pupuk)
     {
-        if ($pupuk->gambar) {
-            ProjectImage::delete($pupuk->gambar);
+        try {
+            if ($pupuk->gambar) {
+                ProjectImage::delete($pupuk->gambar);
+            }
+            $pupuk->delete();
+            return redirect()->route('admin.pupuk.index')
+                ->with('success', '✅ Data pupuk berhasil dihapus.');
+        } catch (\Exception $e) {
+            return back()->with('error', '❌ Gagal menghapus data: ' . $e->getMessage());
         }
-        $pupuk->delete();
-        return redirect()->route('admin.pupuk.index')
-            ->with('success', 'Data pupuk berhasil dihapus.');
     }
 }
