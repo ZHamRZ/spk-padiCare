@@ -24,7 +24,7 @@ class CfSchema
         static $result;
 
         if ($result === null) {
-            $result = Schema::hasTable('gejala_pupuk');
+            $result = Schema::hasTable('penyakit_pupuk');
         }
 
         return $result;
@@ -35,7 +35,7 @@ class CfSchema
         static $result;
 
         if ($result === null) {
-            $result = Schema::hasTable('gejala_pestisida');
+            $result = Schema::hasTable('penyakit_pestisida');
         }
 
         return $result;

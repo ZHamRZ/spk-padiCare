@@ -6,7 +6,7 @@
 @section('content')
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Input Rule Certainty Factor Pupuk per Gejala</span>
+        <span>Input Rule Certainty Factor Pupuk per Penyakit</span>
         <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleExpandBtn">
             <i class="bi bi-arrows-expand"></i> Tampilkan Semua
         </button>
