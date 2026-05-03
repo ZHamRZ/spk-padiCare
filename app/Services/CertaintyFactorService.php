@@ -136,6 +136,16 @@ class CertaintyFactorService
                 ]);
             }
             
+            // Ambil symptom details untuk ekstrak MB/MD dari gejala
+            $symptomDetails = data_get($item, 'symptom_details', []);
+            $mbGejala = 0;
+            $mdGejala = 0;
+            if (!empty($symptomDetails) && is_array($symptomDetails)) {
+                $firstSymptom = reset($symptomDetails);
+                $mbGejala = (float) data_get($firstSymptom, 'mb', 0);
+                $mdGejala = (float) data_get($firstSymptom, 'md', 0);
+            }
+            
             return [
                 'id' => data_get($item, 'id'),
                 'kode' => data_get($item, 'kode'),
@@ -144,13 +154,16 @@ class CertaintyFactorService
                 'peringkat' => data_get($item, 'peringkat'),
                 'meta' => $meta,
                 'cf_meta' => [
-                    'mb_awal' => 0,
-                    'md_awal' => 0,
+                    'mb_awal' => $mbGejala,
+                    'md_awal' => $mdGejala,
                     'cf_awal' => $type === 'pupuk' 
                         ? data_get($item, 'cf_penyebab_total', 0) 
                         : data_get($item, 'cf_solusi_total', 0),
-                    'mb_akhir' => 0,
-                    'md_akhir' => 0,
+                    'mb_penyakit' => data_get($item, 'mb_penyakit', 0),
+                    'md_penyakit' => data_get($item, 'md_penyakit', 0),
+                    'cf_penyakit' => data_get($item, 'cf_penyakit_spesifik', null),
+                    'mb_akhir' => $mbGejala,
+                    'md_akhir' => $mdGejala,
                     'cf_akhir' => data_get($item, 'cf_rekomendasi'),
                 ],
                 'interpretation' => data_get($item, 'interpretation'),
