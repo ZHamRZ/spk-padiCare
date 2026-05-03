@@ -36,9 +36,9 @@ $cfRekomendasi = $cfSolusiTotal; // TANPA TRANSFORMASI
 
 ---
 
-### 2. ✅ SAWService (DIPERBAIKI)
+### 2. ✅ CertaintyFactorService (DIPERBAIKI)
 
-**Lokasi:** `/workspace/app/Services/SAWService.php`
+**Lokasi:** `/workspace/app/Services/CertaintyFactorService.php`
 
 **Status:** ✅ **TELAH DIPERBAIKI UNTUK MENGGUNAKAN FERTILIZERPESTICIDERECOMMENDATIONENGINE**
 
@@ -116,16 +116,16 @@ public function preview(int $idPenyakit, array $preferensi = []): array
 
 #### Masalah yang Ditemukan:
 
-**Baris 14-22:** Masih menggunakan `SAWService` secara langsung tanpa memanfaatkan engine baru
+**Baris 14-22:** Masih menggunakan `CertaintyFactorService` secara langsung tanpa memanfaatkan engine baru
 ```php
 public function previewForDisease(int $diseaseId, array $preferences = []): array
 {
-    return $this->sawEngine->preview($diseaseId, $preferences);
+    return $this->cfService->preview($diseaseId, $preferences);
 }
 
 public function saveForUser(int $userId, int $diseaseId, array $preferences = []): Rekomendasi
 {
-    return $this->sawEngine->hitung($userId, $diseaseId, $preferences);
+    return $this->cfService->hitung($userId, $diseaseId, $preferences);
 }
 ```
 
@@ -135,7 +135,7 @@ public function saveForUser(int $userId, int $diseaseId, array $preferences = []
 
 ```php
 public function __construct(
-    private SAWService $sawEngine,
+    private CertaintyFactorService $cfService,
     private CertaintyFactorEngine $cfEngine,
     private FertilizerPesticideRecommendationEngine $fpEngine // TAMBAHKAN
 ) {}
@@ -156,7 +156,7 @@ public function previewForDisease(int $diseaseId, array $preferences = []): arra
         );
     }
     
-    return $this->sawEngine->preview($diseaseId, $preferences);
+    return $this->cfService->preview($diseaseId, $preferences);
 }
 ```
 
@@ -220,7 +220,7 @@ Controller ini hanya menampilkan hasil yang sudah dihitung, tidak melakukan perh
 - `nilai_vi` → nilai CF akhir
 - `peringkat` → ranking
 
-Struktur ini tetap dipertahankan oleh `formatFpResultToLegacy()` di `SAWService`.
+Struktur ini tetap dipertahankan oleh `formatFpResultToLegacy()` di `CertaintyFactorService`.
 
 ---
 
@@ -288,7 +288,7 @@ Relasi ini digunakan dengan benar oleh `FertilizerPesticideRecommendationEngine`
            │ symptomIds
            ▼
 ┌─────────────────────────────────────┐
-│ SAWService.preview()                │ ← DIPERBAIKI
+│ CertaintyFactorService.preview()                │ ← DIPERBAIKI
 │  - Deteksi gejalaIds                │
 │  - Jika ada: panggil fpEngine       │
 │  - Jika tidak: fallback hitungAlt   │
@@ -342,7 +342,7 @@ Relasi ini digunakan dengan benar oleh `FertilizerPesticideRecommendationEngine`
 | Komponen | Status | Keterangan |
 |----------|--------|------------|
 | `FertilizerPesticideRecommendationEngine` | ✅ **SESUAI** | Engine baru dengan logika CF benar |
-| `SAWService` | ✅ **DIPERBAIKI** | Sudah terintegrasi dengan fpEngine |
+| `CertaintyFactorService` | ✅ **DIPERBAIKI** | Sudah terintegrasi dengan fpEngine |
 | `RecommendationService` | ⚠️ **PERLU UPDATE** | Masih menggunakan logika lama |
 | `DiagnosisController` | ✅ **SESUAI** | Mengirim data gejala dengan benar |
 | `RekomendasiController` | ✅ **SESUAI** | Kompatibel dengan struktur baru |
@@ -452,7 +452,7 @@ CF_rekomendasi = CF_solusi_total
 3. ✅ Pestisida tidak mengalami transformasi (sesuai spesifikasi)
 4. ✅ Kombinasi multi-gejala menggunakan rumus CF standar
 5. ✅ Filter dan labeling sudah sesuai
-6. ✅ **`SAWService`** telah diperbaiki untuk menggunakan `FertilizerPesticideRecommendationEngine`
+6. ✅ **`CertaintyFactorService`** telah diperbaiki untuk menggunakan `FertilizerPesticideRecommendationEngine`
 7. ✅ **`RecommendationService`** telah diperbaiki untuk mendelegasikan ke fpEngine
 8. ✅ Alur data lengkap sudah terintegrasi dengan benar
 
@@ -461,7 +461,7 @@ CF_rekomendasi = CF_solusi_total
 | Komponen | Status Final | Keterangan |
 |----------|-------------|------------|
 | `FertilizerPesticideRecommendationEngine` | ✅ **SELESAI** | Engine baru dengan logika CF benar |
-| `SAWService` | ✅ **SELESAI** | Terintegrasi penuh dengan fpEngine |
+| `CertaintyFactorService` | ✅ **SELESAI** | Terintegrasi penuh dengan fpEngine |
 | `RecommendationService` | ✅ **SELESAI** | Menggunakan fpEngine untuk semua perhitungan |
 | `DiagnosisController` | ✅ **SELESAI** | Mengirim data gejala dengan benar |
 | `RekomendasiController` | ✅ **SELESAI** | Kompatibel dengan struktur baru |
@@ -479,7 +479,7 @@ Dengan perbaikan ini, sistem sekarang menghasilkan rekomendasi yang:
 ### 📝 Ringkasan Perubahan:
 
 #### File yang Dimodifikasi:
-1. `/workspace/app/Services/SAWService.php`
+1. `/workspace/app/Services/CertaintyFactorService.php`
    - Tambah dependency `FertilizerPesticideRecommendationEngine`
    - Update `preview()` untuk menggunakan fpEngine
    - Tambah method `formatFpResultToLegacy()`

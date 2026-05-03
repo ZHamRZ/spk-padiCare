@@ -7,7 +7,7 @@ use App\Models\Rekomendasi;
 class RecommendationService
 {
     public function __construct(
-        private SAWService $sawEngine,
+        private CertaintyFactorService $cfService,
         private CertaintyFactorEngine $cfEngine,
         private FertilizerPesticideRecommendationEngine $fpEngine
     ) {}
@@ -36,17 +36,17 @@ class RecommendationService
         }
         
         // Fallback ke metode lama jika tidak ada gejala
-        return $this->sawEngine->preview($diseaseId, $preferences);
+        return $this->cfService->preview($diseaseId, $preferences);
     }
 
     public function saveForUser(int $userId, int $diseaseId, array $preferences = []): Rekomendasi
     {
-        return $this->sawEngine->hitung($userId, $diseaseId, $preferences);
+        return $this->cfService->hitung($userId, $diseaseId, $preferences);
     }
 
     public function getPreferencePresets(): array
     {
-        return $this->sawEngine->getPreferencePresets();
+        return $this->cfService->getPreferencePresets();
     }
 
     /**
@@ -86,7 +86,7 @@ class RecommendationService
         }
         
         // Fallback ke metode lama jika tidak ada gejala
-        $baseResult = $this->sawEngine->preview($diseaseId, [
+        $baseResult = $this->cfService->preview($diseaseId, [
             'preset' => $presetType,
             'kriteria' => $criteriaWeights,
             'gejala_weights' => $symptomWeights,

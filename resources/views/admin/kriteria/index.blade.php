@@ -8,13 +8,19 @@
     <div class="col-12">
         @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
+            <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         @endif
         @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ session('error') }}
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        @endif
+        @if(session('info'))
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i>{{ session('info') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         @endif
@@ -80,12 +86,14 @@
         </div>
         <div class="col-xl-4">
             <div class="card h-100">
-                <div class="card-header">Panduan Parameter</div>
+                <div class="card-header">📘 Panduan Parameter Certainty Factor</div>
                 <div class="card-body">
                     <div class="display-6 fw-bold text-success">{{ number_format($averageBobot, 2) }}</div>
-                    <p class="text-muted">Nilai ini menunjukkan rata-rata faktor dasar yang dipakai saat pengguna memilih prioritas seimbang, hemat biaya, atau efisiensi tinggi.</p>
+                    <p class="text-muted">Nilai ini menunjukkan rata-rata faktor dasar yang dipakai sebagai adjustment MB/MD saat pengguna memilih prioritas seimbang, hemat biaya, atau efisiensi tinggi.</p>
                     <div class="alert alert-info">
-                        Pada pendekatan CF, parameter ini dipakai sebagai dasar pengaruh rule saat sistem menyesuaikan rekomendasi dengan prioritas pengguna.
+                        <strong>Metode Certainty Factor (CF):</strong><br>
+                        Parameter ini digunakan untuk menyesuaikan nilai MB (Measure of Belief) dan MD (Measure of Disbelief) dalam rumus CF = MB - MD. 
+                        Semakin tinggi bobot, semakin besar pengaruh preferensi pengguna terhadap rekomendasi akhir.
                     </div>
                     <hr>
                     <h6 class="fw-bold">Cara Menggunakan:</h6>

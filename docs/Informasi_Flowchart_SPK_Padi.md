@@ -1081,7 +1081,7 @@ Setiap kriteria menghasilkan:
 
 ## 10. Algoritma SAW
 
-Algoritma inti berada pada `App\Services\SAWService`.
+Algoritma inti berada pada `App\Services\CertaintyFactorService`.
 
 ## 10.1 Tujuan
 
@@ -1253,7 +1253,7 @@ Jika sewaktu-waktu perlu menelusuri detail implementasi, file yang paling pentin
 - `app/Http/Controllers/Admin/RatingController.php`
 - `app/Http/Controllers/Admin/UserController.php`
 - `app/Http/Controllers/Admin/RiwayatController.php`
-- `app/Services/SAWService.php`
+- `app/Services/CertaintyFactorService.php`
 
 ## 16. Penutup
 
