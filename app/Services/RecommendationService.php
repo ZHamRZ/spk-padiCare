@@ -523,14 +523,4 @@ class RecommendationService
         // Cap total adjustment di 0.08 (8%) untuk menghindari dominasi berlebihan
         return min(0.08, $totalAdjustment);
     }
-
-    private function getPreferenceDescription(string $preset): string
-    {
-        return match ($preset) {
-            'hemat' => 'Preferensi ini memprioritaskan alternatif dengan biaya lebih rendah.',
-            'efisiensi' => 'Preferensi ini memperkuat alternatif dengan keyakinan pakar tertinggi.',
-            'seimbang' => 'Preferensi ini memberikan penyesuaian moderat untuk semua alternatif.',
-            default => 'Preferensi standar dengan penyesuaian minimal.',
-        };
-    }
 }
