@@ -703,6 +703,19 @@
                                     <div class="dl">Peringkat</div>
                                     <div class="dv">#{{ $item->peringkat ?? '-' }}</div>
                                 </div>
+                                <div class="detail-row">
+                                    <div class="dl">Skor CF</div>
+                                    <div class="dv">
+                                        <span class="badge {{ (float)$item->cf_percentage >= 70 ? 'bg-success' : ((float)$item->cf_percentage >= 40 ? 'bg-warning text-dark' : 'bg-info text-dark') }}">
+                                            {{ number_format($item->cf_percentage ?? 0, 2) }}%
+                                        </span>
+                                        @if(data_get($item, 'adjustment_info.is_high_efficiency'))
+                                        <span class="badge bg-primary ms-1" title="Efisiensi Tinggi">
+                                            <i class="bi bi-lightning-fill"></i> Efisien
+                                        </span>
+                                        @endif
+                                    </div>
+                                </div>
                                 <div class="detail-row span2">
                                     <div class="dl">Detail Kandungan</div>
                                     <div class="dv">{{ $item->pupuk->kandungan_detail ?? '-' }}</div>
@@ -808,6 +821,19 @@
                                 <div class="detail-row">
                                     <div class="dl">Peringkat</div>
                                     <div class="dv">#{{ $item->peringkat ?? '-' }}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="dl">Skor CF</div>
+                                    <div class="dv">
+                                        <span class="badge {{ (float)$item->cf_percentage >= 70 ? 'bg-success' : ((float)$item->cf_percentage >= 40 ? 'bg-warning text-dark' : 'bg-info text-dark') }}">
+                                            {{ number_format($item->cf_percentage ?? 0, 2) }}%
+                                        </span>
+                                        @if(data_get($item, 'adjustment_info.is_high_efficiency'))
+                                        <span class="badge bg-primary ms-1" title="Efisiensi Tinggi">
+                                            <i class="bi bi-lightning-fill"></i> Efisien
+                                        </span>
+                                        @endif
+                                    </div>
                                 </div>
                                 <div class="detail-row span2">
                                     <div class="dl">Detail Kandungan</div>
