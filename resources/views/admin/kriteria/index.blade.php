@@ -108,42 +108,4 @@
         </div>
     </div>
 </form>
-
-<div class="row g-4 mt-2">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">Edit Detail Per Parameter</div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0 align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Kode</th>
-                                <th>Nama</th>
-                                <th>Jenis</th>
-                                <th>Faktor Dasar</th>
-                                <th>Keterangan</th>
-                                <th class="text-end">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($kriteria as $item)
-                            <tr>
-                                <td><span class="badge text-bg-info">{{ $item->kode }}</span></td>
-                                <td>{{ $item->nama }}</td>
-                                <td><span class="badge {{ $item->jenis === 'benefit' ? 'text-bg-success' : 'text-bg-warning' }}">{{ ucfirst($item->jenis) }}</span></td>
-                                <td>{{ number_format($item->bobot, 2) }}</td>
-                                <td class="small text-muted">{{ $item->keterangan ?: '-' }}</td>
-                                <td class="text-end"><a href="{{ route('admin.kriteria.edit', $item) }}" class="btn btn-sm btn-outline-primary">Edit Detail</a></td>
-                            </tr>
-                            @empty
-                            <tr><td colspan="6" class="text-center py-4 text-muted">Belum ada parameter prioritas.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
