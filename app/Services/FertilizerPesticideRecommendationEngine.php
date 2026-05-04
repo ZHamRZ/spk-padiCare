@@ -197,7 +197,7 @@ class FertilizerPesticideRecommendationEngine
     public function calculateAllRecommendations(
         int $diseaseId,
         array $symptomIds = [],
-        ?int $topN = null,
+        ?int $topN = 3,  // Default limit ke 3 teratas
         bool $onlyPositive = true
     ): array {
         $fertilizerRecs = $this->calculateFertilizerRecommendations($diseaseId, $symptomIds);
@@ -215,9 +215,18 @@ class FertilizerPesticideRecommendationEngine
             }
         }
 
+        // Limit to top N (default 3) untuk masing-masing
         if ($topN !== null && $topN > 0) {
             $fertilizerRecs = array_slice($fertilizerRecs, 0, $topN);
             $pesticideRecs = array_slice($pesticideRecs, 0, $topN);
+            
+            // Re-calculate peringkat setelah slicing
+            foreach ($fertilizerRecs as $index => &$item) {
+                $item['peringkat'] = $index + 1;
+            }
+            foreach ($pesticideRecs as $index => &$item) {
+                $item['peringkat'] = $index + 1;
+            }
         }
 
         $disease = Penyakit::find($diseaseId);
